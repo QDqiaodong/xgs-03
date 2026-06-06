@@ -113,8 +113,16 @@ const userStore = useUserStore()
 const archive = ref(null)
 const logs = ref([])
 const showAddLogModal = ref(false)
+
+const toLocalDateStr = (date) => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
 const newLog = ref({
-    logDate: new Date().toISOString().split('T')[0],
+    logDate: toLocalDateStr(new Date()),
     operationType: '浇水',
     details: '',
     growthStatus: '',
@@ -127,6 +135,10 @@ const getDefaultImage = () => {
 
 const formatDate = (date) => {
     if (!date) return '未知日期'
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const [y, m, d] = date.split('-').map(Number)
+        return new Date(y, m - 1, d).toLocaleDateString('zh-CN')
+    }
     return new Date(date).toLocaleDateString('zh-CN')
 }
 
@@ -152,7 +164,7 @@ const createLog = async () => {
         showAddLogModal.value = false
         loadLogs()
         newLog.value = {
-            logDate: new Date().toISOString().split('T')[0],
+            logDate: toLocalDateStr(new Date()),
             operationType: '浇水',
             details: '',
             growthStatus: '',

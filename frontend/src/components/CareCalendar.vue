@@ -130,6 +130,71 @@ const selectedDate = ref(null)
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
+function toLocalDateString(date) {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
+function formatDateStr(year, month, day) {
+    const dt = new Date(year, month, day)
+    return toLocalDateString(dt)
+}
+
+function getTypeKey(type) {
+    const map = {
+        '浇水': 'water',
+        '施肥': 'fertilize',
+        '修剪': 'prune'
+    }
+    return map[type] || 'other'
+}
+
+function getOperationTypeLabel(type) {
+    const labels = {
+        '浇水': '💧 浇水',
+        '施肥': '🧪 施肥',
+        '修剪': '✂️ 修剪',
+        '换盆': '🪴 换盆',
+        '其他': '📝 其他'
+    }
+    return labels[type] || type
+}
+
+function getPlantName(plantId) {
+    const plant = props.archives.find(p => p.id === plantId)
+    return plant ? (plant.customName || plant.plantCategory?.name || '未命名') : '未知植物'
+}
+
+function formatFullDate(dateStr) {
+    if (!dateStr) return ''
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const dt = new Date(y, m - 1, d)
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    return `${dt.getFullYear()}年${dt.getMonth() + 1}月${dt.getDate()}日 ${weekdays[dt.getDay()]}`
+}
+
+function createCell(day, dateStr, inCurrentMonth) {
+    const logs = filteredLogs.value.filter(log => log.logDate === dateStr)
+    const isToday = dateStr === toLocalDateString(today)
+
+    const typeSet = new Set()
+    const dots = []
+    for (const log of logs) {
+        const typeKey = getTypeKey(log.operationType)
+        if (!typeSet.has(typeKey)) {
+            typeSet.add(typeKey)
+            if (dots.length < 3) {
+                dots.push({ type: typeKey, label: log.operationType })
+            }
+        }
+    }
+    const moreCount = logs.length > 3 ? logs.length - 3 : 0
+
+    return { day, dateStr, inCurrentMonth, isToday, logs, dots, moreCount }
+}
+
 watch(() => props.archives, (newVal) => {
     if (newVal && newVal.length > 0 && !selectedPlantId.value) {
         selectedPlantId.value = newVal[0].id
@@ -175,63 +240,6 @@ const selectedDayLogs = computed(() => {
     if (!selectedDate.value) return []
     return filteredLogs.value.filter(log => log.logDate === selectedDate.value)
 })
-
-function createCell(day, dateStr, inCurrentMonth) {
-    const logs = filteredLogs.value.filter(log => log.logDate === dateStr)
-    const isToday = dateStr === formatDateStr(today.getFullYear(), today.getMonth(), today.getDate())
-
-    const typeSet = new Set()
-    const dots = []
-    for (const log of logs) {
-        const typeKey = getTypeKey(log.operationType)
-        if (!typeSet.has(typeKey)) {
-            typeSet.add(typeKey)
-            if (dots.length < 3) {
-                dots.push({ type: typeKey, label: log.operationType })
-            }
-        }
-    }
-    const moreCount = logs.length > 3 ? logs.length - 3 : 0
-
-    return { day, dateStr, inCurrentMonth, isToday, logs, dots, moreCount }
-}
-
-function formatDateStr(year, month, day) {
-    const d = new Date(year, month, day)
-    return d.toISOString().split('T')[0]
-}
-
-function getTypeKey(type) {
-    const map = {
-        '浇水': 'water',
-        '施肥': 'fertilize',
-        '修剪': 'prune'
-    }
-    return map[type] || 'other'
-}
-
-function getOperationTypeLabel(type) {
-    const labels = {
-        '浇水': '💧 浇水',
-        '施肥': '🧪 施肥',
-        '修剪': '✂️ 修剪',
-        '换盆': '🪴 换盆',
-        '其他': '📝 其他'
-    }
-    return labels[type] || type
-}
-
-function getPlantName(plantId) {
-    const plant = props.archives.find(p => p.id === plantId)
-    return plant ? (plant.customName || plant.plantCategory?.name || '未命名') : '未知植物'
-}
-
-function formatFullDate(dateStr) {
-    if (!dateStr) return ''
-    const d = new Date(dateStr)
-    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`
-}
 
 function prevMonth() {
     if (currentMonth.value === 0) {
@@ -298,7 +306,7 @@ function generateMockLogs() {
             id: 1000 + i,
             plantArchiveId: plantId,
             userId: userStore.currentUser.id,
-            logDate: d.toISOString().split('T')[0],
+            logDate: toLocalDateString(d),
             operationType: operations[opIdx],
             details: details[opIdx],
             growthStatus: Math.random() > 0.5 ? '长势良好' : null,
