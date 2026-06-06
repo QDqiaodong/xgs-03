@@ -14,9 +14,9 @@
                     >单株植物</button>
                 </div>
             </div>
-            <div v-if="filterMode === 'single' && archives.length > 0" class="plant-select-row">
+            <div v-if="filterMode === 'single' && plantList.length > 0" class="plant-select-row">
                 <select v-model="selectedPlantId" class="plant-select">
-                    <option v-for="plant in archives" :key="plant.id" :value="plant.id">
+                    <option v-for="plant in plantList" :key="plant.id" :value="plant.id">
                         {{ plant.customName || plant.plantCategory?.name || '未命名' }}
                     </option>
                 </select>
@@ -130,6 +130,18 @@ const selectedDate = ref(null)
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
+const fallbackPlants = [
+    { id: 1, customName: '小绿', plantCategory: { name: '绿萝' } },
+    { id: 2, customName: '肉肉', plantCategory: { name: '多肉植物' } }
+]
+
+const plantList = computed(() => {
+    if (props.archives && props.archives.length > 0) {
+        return props.archives
+    }
+    return fallbackPlants
+})
+
 function toLocalDateString(date) {
     const y = date.getFullYear()
     const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -163,7 +175,7 @@ function getOperationTypeLabel(type) {
 }
 
 function getPlantName(plantId) {
-    const plant = props.archives.find(p => p.id === plantId)
+    const plant = plantList.value.find(p => p.id === plantId)
     return plant ? (plant.customName || plant.plantCategory?.name || '未命名') : '未知植物'
 }
 
@@ -195,9 +207,9 @@ function createCell(day, dateStr, inCurrentMonth) {
     return { day, dateStr, inCurrentMonth, isToday, logs, dots, moreCount }
 }
 
-watch(() => props.archives, (newVal) => {
-    if (newVal && newVal.length > 0 && !selectedPlantId.value) {
-        selectedPlantId.value = newVal[0].id
+watch([() => plantList.value, filterMode], ([newList, newMode]) => {
+    if (newMode === 'single' && newList && newList.length > 0 && !selectedPlantId.value) {
+        selectedPlantId.value = newList[0].id
     }
 }, { immediate: true })
 
@@ -299,8 +311,8 @@ function generateMockLogs() {
         const d = new Date(now)
         d.setDate(d.getDate() - Math.floor(Math.random() * 60))
         const opIdx = Math.floor(Math.random() * operations.length)
-        const plantId = props.archives.length > 0
-            ? props.archives[Math.floor(Math.random() * props.archives.length)].id
+        const plantId = plantList.value.length > 0
+            ? plantList.value[Math.floor(Math.random() * plantList.value.length)].id
             : 1
         mock.push({
             id: 1000 + i,
