@@ -162,6 +162,13 @@ body {
     font-weight: 600;
 }
 
+.section-title {
+    font-size: 20px;
+    color: #1b5e20;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
 .tag {
     display: inline-block;
     padding: 4px 12px;

@@ -5,11 +5,15 @@
             <button class="btn btn-primary" @click="showAddModal = true">+ 新增绿植</button>
         </div>
 
+        <CareCalendar ref="calendarRef" :archives="archives" />
+
         <div v-if="archives.length === 0" class="empty-state card">
             <div class="empty-icon">🌱</div>
             <h3>还没有绿植档案</h3>
             <p>点击上方按钮，开始记录您的第一盆绿植吧！</p>
         </div>
+
+        <h2 class="section-title">🪴 我的绿植列表</h2>
 
         <div class="grid grid-3">
             <div v-for="archive in archives" :key="archive.id" class="archive-card card" @click="goToDetail(archive.id)">
@@ -104,11 +108,13 @@ import { useRouter } from 'vue-router'
 import { plantArchiveApi, plantCategoryApi } from '../api'
 import { useUserStore } from '../stores/user'
 import LazyImage from '../components/LazyImage.vue'
+import CareCalendar from '../components/CareCalendar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const archives = ref([])
 const categories = ref([])
+const calendarRef = ref(null)
 const showAddModal = ref(false)
 const newArchive = ref({
     plantCategoryId: null,
