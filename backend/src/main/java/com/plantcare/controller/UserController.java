@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping(value = "/users", produces = "application/json;charset=UTF-8")
 @RequiredArgsConstructor
 public class UserController {
 

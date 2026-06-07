@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/favorites")
+@RequestMapping(value = "/favorites", produces = "application/json;charset=UTF-8")
 @RequiredArgsConstructor
 public class FavoriteController {
 

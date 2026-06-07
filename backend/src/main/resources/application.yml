@@ -2,13 +2,19 @@ server:
   port: 8080
   servlet:
     context-path: /api
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      force-request: true
+      force-response: true
 
 spring:
   application:
     name: plant-care
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3330/plant_care?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3330/plant_care?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai}
     username: ${SPRING_DATASOURCE_USERNAME:plant}
     password: ${SPRING_DATASOURCE_PASSWORD:plant123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -17,6 +23,7 @@ spring:
       minimum-idle: 5
       idle-timeout: 300000
       connection-timeout: 20000
+      connection-init-sql: SET NAMES utf8mb4
 
   jpa:
     hibernate:

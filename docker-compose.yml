@@ -58,7 +58,7 @@ services:
     ports:
       - "${BACKEND_PORT}:${BACKEND_INTERNAL_PORT}"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:${MYSQL_INTERNAL_PORT}/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:${MYSQL_INTERNAL_PORT}/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_DATA_REDIS_HOST: redis

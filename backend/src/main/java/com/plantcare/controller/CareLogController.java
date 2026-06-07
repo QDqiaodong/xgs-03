@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/care-logs")
+@RequestMapping(value = "/care-logs", produces = "application/json;charset=UTF-8")
 @RequiredArgsConstructor
 public class CareLogController {
 
