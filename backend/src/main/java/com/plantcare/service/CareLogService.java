@@ -18,12 +18,12 @@ public class CareLogService {
     private final CareLogRepository careLogRepository;
 
     public List<CareLog> getPlantLogs(Long plantArchiveId) {
-        return careLogRepository.findByPlantArchiveIdOrderByLogDateDesc(plantArchiveId);
+        return careLogRepository.findByPlantArchiveIdOrderByLogDateDescCreatedAtDesc(plantArchiveId);
     }
 
     public Page<CareLog> getPlantLogsPaged(Long plantArchiveId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return careLogRepository.findByPlantArchiveIdOrderByLogDateDesc(plantArchiveId, pageable);
+        return careLogRepository.findByPlantArchiveIdOrderByLogDateDescCreatedAtDesc(plantArchiveId, pageable);
     }
 
     public List<CareLog> getUserLogs(Long userId) {

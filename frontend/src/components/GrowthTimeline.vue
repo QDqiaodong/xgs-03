@@ -78,8 +78,6 @@
                 </div>
             </div>
 
-            <div ref="sentinelRef" class="timeline-sentinel"></div>
-
             <div v-if="loading" class="loading-more">
                 <div class="spinner"></div>
                 <span>加载中...</span>
@@ -89,6 +87,8 @@
                 <span>— 已加载全部记录 —</span>
             </div>
         </div>
+
+        <div ref="sentinelRef" class="timeline-sentinel"></div>
 
         <div v-if="previewImages.length > 0" class="image-preview-overlay" @click.self="closeImagePreview">
             <button class="preview-close" @click="closeImagePreview">×</button>
@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import LazyImage from './LazyImage.vue'
 
 const props = defineProps({
@@ -242,33 +242,48 @@ const loadMoreLogs = async () => {
     }
 }
 
+const setupObserver = () => {
+    if (!('IntersectionObserver' in window)) return
+    if (observer.value) {
+        observer.value.disconnect()
+        observer.value = null
+    }
+    if (!sentinelRef.value) return
+    observer.value = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting && hasMore.value && !loading.value) {
+                loadMoreLogs()
+            }
+        })
+    }, {
+        rootMargin: '200px',
+        threshold: 0.1
+    })
+    observer.value.observe(sentinelRef.value)
+}
+
 const resetAndLoad = async () => {
     logs.value = []
     currentPage.value = 0
     hasMore.value = true
     await loadMoreLogs()
+    await nextTick()
+    setupObserver()
 }
 
 watch(() => props.plantId, () => {
     resetAndLoad()
 })
 
+watch(logs, async () => {
+    await nextTick()
+    setupObserver()
+})
+
 onMounted(async () => {
     await loadMoreLogs()
-
-    if ('IntersectionObserver' in window && sentinelRef.value) {
-        observer.value = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting && hasMore.value && !loading.value) {
-                    loadMoreLogs()
-                }
-            })
-        }, {
-            rootMargin: '200px',
-            threshold: 0.1
-        })
-        observer.value.observe(sentinelRef.value)
-    }
+    await nextTick()
+    setupObserver()
 })
 
 onUnmounted(() => {

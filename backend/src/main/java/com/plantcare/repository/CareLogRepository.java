@@ -11,9 +11,9 @@ import java.util.List;
 @Repository
 public interface CareLogRepository extends JpaRepository<CareLog, Long> {
 
-    List<CareLog> findByPlantArchiveIdOrderByLogDateDesc(Long plantArchiveId);
+    List<CareLog> findByPlantArchiveIdOrderByLogDateDescCreatedAtDesc(Long plantArchiveId);
 
     List<CareLog> findByUserIdOrderByLogDateDesc(Long userId);
 
-    Page<CareLog> findByPlantArchiveIdOrderByLogDateDesc(Long plantArchiveId, Pageable pageable);
+    Page<CareLog> findByPlantArchiveIdOrderByLogDateDescCreatedAtDesc(Long plantArchiveId, Pageable pageable);
 }
