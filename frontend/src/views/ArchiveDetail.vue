@@ -43,25 +43,12 @@
             <p>{{ archive.notes }}</p>
         </div>
 
-        <div class="logs-section">
-            <h2 class="section-title">📋 养护日志</h2>
-            <div v-if="logs.length === 0" class="empty-logs card">
-                <p>暂无养护记录，点击上方按钮开始记录</p>
-            </div>
-            <div v-else class="log-list">
-                <div v-for="log in logs" :key="log.id" class="log-item card">
-                    <div class="log-header">
-                        <span class="log-date">{{ formatDate(log.logDate) }}</span>
-                        <span class="log-type">{{ getOperationTypeLabel(log.operationType) }}</span>
-                    </div>
-                    <p v-if="log.details" class="log-details">{{ log.details }}</p>
-                    <div class="log-status">
-                        <span v-if="log.growthStatus">🌱 {{ log.growthStatus }}</span>
-                        <span v-if="log.diseaseStatus">⚠️ {{ log.diseaseStatus }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <GrowthTimeline
+            ref="timelineRef"
+            :plantId="route.params.id"
+            :fetchLogs="fetchLogsPaged"
+            :pageSize="5"
+        />
 
         <div v-if="showAddLogModal" class="modal-overlay" @click.self="showAddLogModal = false">
             <div class="modal card">
@@ -107,12 +94,13 @@ import { useRoute } from 'vue-router'
 import { plantArchiveApi, careLogApi } from '../api'
 import { useUserStore } from '../stores/user'
 import LazyImage from '../components/LazyImage.vue'
+import GrowthTimeline from '../components/GrowthTimeline.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
 const archive = ref(null)
-const logs = ref([])
 const showAddLogModal = ref(false)
+const timelineRef = ref(null)
 
 const toLocalDateStr = (date) => {
     const y = date.getFullYear()
@@ -142,15 +130,14 @@ const formatDate = (date) => {
     return new Date(date).toLocaleDateString('zh-CN')
 }
 
-const getOperationTypeLabel = (type) => {
-    const labels = {
-        '浇水': '💧 浇水',
-        '施肥': '🧪 施肥',
-        '修剪': '✂️ 修剪',
-        '换盆': '🪴 换盆',
-        '其他': '📝 其他'
+const fetchLogsPaged = async (plantId, page, size) => {
+    try {
+        const res = await careLogApi.getByPlantPaged(plantId, page, size)
+        return res.data
+    } catch (e) {
+        console.error('加载日志失败', e)
+        throw e
     }
-    return labels[type] || type
 }
 
 const createLog = async () => {
@@ -162,7 +149,6 @@ const createLog = async () => {
         }
         await careLogApi.create(data)
         showAddLogModal.value = false
-        loadLogs()
         newLog.value = {
             logDate: toLocalDateStr(new Date()),
             operationType: '浇水',
@@ -170,23 +156,15 @@ const createLog = async () => {
             growthStatus: '',
             diseaseStatus: ''
         }
+        if (timelineRef.value) {
+            timelineRef.value.resetAndLoad()
+        }
     } catch (e) {
         console.error('创建失败', e)
-        logs.value.unshift({
-            id: Date.now(),
-            ...newLog.value,
-            createdAt: new Date().toISOString()
-        })
         showAddLogModal.value = false
-    }
-}
-
-const loadLogs = async () => {
-    try {
-        const res = await careLogApi.getByPlant(route.params.id)
-        logs.value = res.data
-    } catch (e) {
-        console.error('加载失败', e)
+        if (timelineRef.value) {
+            timelineRef.value.resetAndLoad()
+        }
     }
 }
 
@@ -209,7 +187,6 @@ onMounted(async () => {
             notes: '喜欢散射光，避免阳光直射'
         }
     }
-    loadLogs()
 })
 </script>
 
@@ -296,54 +273,6 @@ onMounted(async () => {
 .notes-section p {
     color: #555;
     line-height: 1.6;
-}
-
-.section-title {
-    font-size: 20px;
-    color: #1b5e20;
-    margin-bottom: 16px;
-}
-
-.empty-logs {
-    text-align: center;
-    color: #888;
-    padding: 40px;
-}
-
-.log-item {
-    margin-bottom: 12px;
-}
-
-.log-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.log-date {
-    font-weight: 500;
-    color: #1b5e20;
-}
-
-.log-type {
-    background: #e8f5e9;
-    color: #388e3c;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 13px;
-}
-
-.log-details {
-    color: #555;
-    margin-bottom: 8px;
-}
-
-.log-status {
-    display: flex;
-    gap: 16px;
-    font-size: 13px;
-    color: #666;
 }
 
 .modal-overlay {

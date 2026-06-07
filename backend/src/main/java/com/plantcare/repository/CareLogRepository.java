@@ -1,6 +1,8 @@
 package com.plantcare.repository;
 
 import com.plantcare.entity.CareLog;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +14,6 @@ public interface CareLogRepository extends JpaRepository<CareLog, Long> {
     List<CareLog> findByPlantArchiveIdOrderByLogDateDesc(Long plantArchiveId);
 
     List<CareLog> findByUserIdOrderByLogDateDesc(Long userId);
+
+    Page<CareLog> findByPlantArchiveIdOrderByLogDateDesc(Long plantArchiveId, Pageable pageable);
 }

@@ -3,6 +3,9 @@ package com.plantcare.service;
 import com.plantcare.entity.CareLog;
 import com.plantcare.repository.CareLogRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +19,11 @@ public class CareLogService {
 
     public List<CareLog> getPlantLogs(Long plantArchiveId) {
         return careLogRepository.findByPlantArchiveIdOrderByLogDateDesc(plantArchiveId);
+    }
+
+    public Page<CareLog> getPlantLogsPaged(Long plantArchiveId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return careLogRepository.findByPlantArchiveIdOrderByLogDateDesc(plantArchiveId, pageable);
     }
 
     public List<CareLog> getUserLogs(Long userId) {

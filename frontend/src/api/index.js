@@ -22,6 +22,7 @@ export const plantArchiveApi = {
 
 export const careLogApi = {
     getByPlant: (plantId) => api.get(`/care-logs/plant/${plantId}`),
+    getByPlantPaged: (plantId, page = 0, size = 5) => api.get(`/care-logs/plant/${plantId}/paged`, { params: { page, size } }),
     getByUser: (userId) => api.get(`/care-logs/user/${userId}`),
     getById: (id) => api.get(`/care-logs/${id}`),
     create: (data) => api.post('/care-logs', data),
