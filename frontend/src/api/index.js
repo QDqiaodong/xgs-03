@@ -23,6 +23,19 @@ export const plantArchiveApi = {
 export const careLogApi = {
     getByPlant: (plantId) => api.get(`/care-logs/plant/${plantId}`),
     getByPlantPaged: (plantId, page = 0, size = 5) => api.get(`/care-logs/plant/${plantId}/paged`, { params: { page, size } }),
+    getByPlantFiltered: (plantId, page = 0, size = 5, filters = {}) => api.get(`/care-logs/plant/${plantId}/filtered`, {
+        params: {
+            page,
+            size,
+            operationTypes: filters.operationTypes && filters.operationTypes.length > 0 ? filters.operationTypes : undefined,
+            startDate: filters.startDate || undefined,
+            endDate: filters.endDate || undefined,
+            keyword: filters.keyword || undefined
+        },
+        paramsSerializer: {
+            indexes: null
+        }
+    }),
     getByUser: (userId) => api.get(`/care-logs/user/${userId}`),
     getById: (id) => api.get(`/care-logs/${id}`),
     create: (data) => api.post('/care-logs', data),

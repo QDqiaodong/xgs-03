@@ -116,6 +116,10 @@ const props = defineProps({
     pageSize: {
         type: Number,
         default: 5
+    },
+    filters: {
+        type: Object,
+        default: () => ({})
     }
 })
 
@@ -227,7 +231,7 @@ const loadMoreLogs = async () => {
     if (loading.value || !hasMore.value) return
     loading.value = true
     try {
-        const result = await props.fetchLogs(props.plantId, currentPage.value, props.pageSize)
+        const result = await props.fetchLogs(props.plantId, currentPage.value, props.pageSize, props.filters)
         const newLogs = result.content || result.data || []
         if (newLogs.length === 0 || newLogs.length < props.pageSize) {
             hasMore.value = false
@@ -274,6 +278,10 @@ const resetAndLoad = async () => {
 watch(() => props.plantId, () => {
     resetAndLoad()
 })
+
+watch(() => props.filters, () => {
+    resetAndLoad()
+}, { deep: true })
 
 watch(logs, async () => {
     await nextTick()

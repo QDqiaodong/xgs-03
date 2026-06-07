@@ -4,9 +4,11 @@ import com.plantcare.entity.CareLog;
 import com.plantcare.service.CareLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -27,6 +29,20 @@ public class CareLogController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
         return ResponseEntity.ok(careLogService.getPlantLogsPaged(plantArchiveId, page, size));
+    }
+
+    @GetMapping("/plant/{plantArchiveId}/filtered")
+    public ResponseEntity<Page<CareLog>> getPlantLogsFiltered(
+            @PathVariable Long plantArchiveId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) List<String> operationTypes,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String keyword) {
+        return ResponseEntity.ok(careLogService.getPlantLogsPagedFiltered(
+                plantArchiveId, page, size, operationTypes, startDate, endDate, keyword
+        ));
     }
 
     @GetMapping("/user/{userId}")
