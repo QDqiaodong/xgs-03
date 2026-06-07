@@ -1,6 +1,11 @@
 <template>
     <div>
-        <h1 class="page-title">🌿 植物百科</h1>
+        <div class="page-header">
+            <h1 class="page-title">🌿 植物百科</h1>
+            <div v-if="compareCount > 0" class="header-hint">
+                💡 点击卡片上的 ☐ 勾选品种进行对比（最多{{ MAX_COMPARE }}个）
+            </div>
+        </div>
 
         <div class="search-bar card">
             <input
@@ -18,7 +23,33 @@
         </div>
 
         <div class="grid grid-3">
-            <div v-for="category in filteredCategories" :key="category.id" class="category-card card" @click="goToDetail(category.id)">
+            <div
+                v-for="category in filteredCategories"
+                :key="category.id"
+                class="category-card card"
+                :class="{ 'card-selected': isInCompare(category.id) }"
+                @click="goToDetail(category.id)"
+            >
+                <div class="compare-checkbox" @click.stop="handleToggleCompare(category)">
+                    <label class="checkbox-wrapper">
+                        <input
+                            type="checkbox"
+                            :checked="isInCompare(category.id)"
+                            :disabled="!isInCompare(category.id) && !canAddToCompare"
+                            @change="handleToggleCompare(category)"
+                        />
+                        <span
+                            class="checkbox-custom"
+                            :class="{ disabled: !isInCompare(category.id) && !canAddToCompare }"
+                        >
+                            <span v-if="isInCompare(category.id)" class="check-icon">✓</span>
+                        </span>
+                    </label>
+                    <span v-if="isInCompare(category.id)" class="compare-badge">
+                        对比中
+                    </span>
+                </div>
+
                 <div class="category-image">
                     <LazyImage
                         :src="getPlantImage(category.name)"
@@ -41,6 +72,21 @@
                 </div>
             </div>
         </div>
+
+        <CompareBar
+            :compare-list="compareList"
+            :max-compare="MAX_COMPARE"
+            @remove="removeFromCompare"
+            @clear="clearCompare"
+            @compare="openCompareModal"
+        />
+
+        <CompareModal
+            :visible="showCompareModal"
+            :compare-list="compareList"
+            @close="closeCompareModal"
+            @remove="removeFromCompare"
+        />
     </div>
 </template>
 
@@ -49,11 +95,28 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { plantCategoryApi } from '../api'
 import LazyImage from '../components/LazyImage.vue'
+import CompareBar from '../components/CompareBar.vue'
+import CompareModal from '../components/CompareModal.vue'
+import { useCompare } from '../composables/useCompare'
 
 const router = useRouter()
 const categories = ref([])
 const searchKeyword = ref('')
 const selectedCategory = ref('')
+
+const {
+    compareList,
+    showCompareModal,
+    isInCompare,
+    canAddToCompare,
+    compareCount,
+    removeFromCompare,
+    toggleCompare,
+    clearCompare,
+    openCompareModal,
+    closeCompareModal,
+    MAX_COMPARE
+} = useCompare()
 
 const filteredCategories = computed(() => {
     let result = categories.value
@@ -80,6 +143,13 @@ const goToDetail = (id) => {
     router.push(`/categories/${id}`)
 }
 
+const handleToggleCompare = (category) => {
+    const added = toggleCompare(category)
+    if (!added && !isInCompare(category.id) && !canAddToCompare.value) {
+        alert(`最多只能对比 ${MAX_COMPARE} 个品种，请先移除已选择的品种`)
+    }
+}
+
 const handleSearch = () => {
 }
 
@@ -93,18 +163,35 @@ onMounted(async () => {
     } catch (e) {
         console.error('加载失败', e)
         categories.value = [
-            { id: 1, name: '绿萝', category: '观叶植物', description: '绿萝是非常常见的室内观叶植物，具有很强的空气净化能力。', lightRequirement: '散射光', waterRequirement: '保持湿润' },
-            { id: 2, name: '吊兰', category: '观叶植物', description: '吊兰适应性强，是新手养植的首选。', lightRequirement: '明亮散射光', waterRequirement: '保持湿润' },
-            { id: 3, name: '多肉植物', category: '多肉植物', description: '多肉植物品种繁多，形态各异，需水量少。', lightRequirement: '充足阳光', waterRequirement: '干透浇透' },
-            { id: 4, name: '君子兰', category: '观花植物', description: '君子兰叶片肥厚有光泽，花期长。', lightRequirement: '明亮散射光', waterRequirement: '见干见湿' },
-            { id: 5, name: '发财树', category: '观叶植物', description: '发财树寓意招财进宝，是办公室和家居装饰的热门选择。', lightRequirement: '散射光', waterRequirement: '宁干勿湿' },
-            { id: 6, name: '虎皮兰', category: '观叶植物', description: '虎皮兰夜间释放氧气，非常适合放置在卧室。', lightRequirement: '适应性强', waterRequirement: '耐干旱' }
+            { id: 1, name: '绿萝', category: '观叶植物', description: '绿萝是非常常见的室内观叶植物，具有很强的空气净化能力。', lightRequirement: '散射光', waterRequirement: '保持湿润', temperatureRange: '15-30℃', humidity: '40-70%', fertilization: '生长季每月施一次稀薄液肥', commonDiseases: '叶斑病、根腐病' },
+            { id: 2, name: '吊兰', category: '观叶植物', description: '吊兰适应性强，是新手养植的首选。', lightRequirement: '明亮散射光', waterRequirement: '保持湿润', temperatureRange: '15-25℃', humidity: '50-70%', fertilization: '每月施一次复合肥', commonDiseases: '叶枯病、蚜虫' },
+            { id: 3, name: '多肉植物', category: '多肉植物', description: '多肉植物品种繁多，形态各异，需水量少。', lightRequirement: '充足阳光', waterRequirement: '干透浇透', temperatureRange: '10-30℃', humidity: '30-50%', fertilization: '生长季每月施一次稀释肥', commonDiseases: '黑腐病、介壳虫' },
+            { id: 4, name: '君子兰', category: '观花植物', description: '君子兰叶片肥厚有光泽，花期长。', lightRequirement: '明亮散射光', waterRequirement: '见干见湿', temperatureRange: '15-25℃', humidity: '40-60%', fertilization: '花期前增施磷钾肥', commonDiseases: '叶斑病、根腐病' },
+            { id: 5, name: '发财树', category: '观叶植物', description: '发财树寓意招财进宝，是办公室和家居装饰的热门选择。', lightRequirement: '散射光', waterRequirement: '宁干勿湿', temperatureRange: '18-30℃', humidity: '40-60%', fertilization: '春秋季每月施一次复合肥', commonDiseases: '叶斑病、根腐病' },
+            { id: 6, name: '虎皮兰', category: '观叶植物', description: '虎皮兰夜间释放氧气，非常适合放置在卧室。', lightRequirement: '适应性强', waterRequirement: '耐干旱', temperatureRange: '10-30℃', humidity: '30-60%', fertilization: '生长季每月施一次稀释肥', commonDiseases: '细菌性软腐病' }
         ]
     }
 })
 </script>
 
 <style scoped>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.header-hint {
+    font-size: 13px;
+    color: #558b2f;
+    background: #e8f5e9;
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
 .search-bar {
     display: flex;
     gap: 16px;
@@ -132,11 +219,85 @@ onMounted(async () => {
     transition: transform 0.3s, box-shadow 0.3s;
     padding: 0;
     overflow: hidden;
+    position: relative;
 }
 
 .category-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.category-card.card-selected {
+    border: 2px solid #4caf50;
+    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.25);
+}
+
+.compare-checkbox {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-wrapper {
+    position: relative;
+    cursor: pointer;
+    display: inline-flex;
+}
+
+.checkbox-wrapper input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.checkbox-custom {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #fff;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.checkbox-wrapper:hover .checkbox-custom:not(.disabled) {
+    border-color: #4caf50;
+    background: #f1f8e9;
+}
+
+.checkbox-custom.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.check-icon {
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.checkbox-wrapper input:checked + .checkbox-custom {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    border-color: #388e3c;
+}
+
+.compare-badge {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    color: white;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .category-image {
