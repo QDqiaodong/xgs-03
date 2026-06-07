@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,8 +20,8 @@ public class PlantArchiveService {
         try {
             return plantArchiveRepository.findByUserIdOrderByCreatedAtDesc(userId);
         } catch (Exception e) {
-            log.warn("getUserArchives failed for userId={}: {}", userId, e.getMessage());
-            return new ArrayList<>();
+            log.error("getUserArchives failed for userId={}", userId, e);
+            throw e;
         }
     }
 
@@ -30,8 +29,8 @@ public class PlantArchiveService {
         try {
             return plantArchiveRepository.findById(id);
         } catch (Exception e) {
-            log.warn("getArchiveById failed for id={}: {}", id, e.getMessage());
-            return Optional.empty();
+            log.error("getArchiveById failed for id={}", id, e);
+            throw e;
         }
     }
 
@@ -39,11 +38,8 @@ public class PlantArchiveService {
         try {
             return plantArchiveRepository.save(archive);
         } catch (Exception e) {
-            log.warn("createArchive failed: {}", e.getMessage());
-            if (archive.getId() == null) {
-                archive.setId(System.currentTimeMillis());
-            }
-            return archive;
+            log.error("createArchive failed", e);
+            throw e;
         }
     }
 
@@ -52,9 +48,8 @@ public class PlantArchiveService {
             archive.setId(id);
             return plantArchiveRepository.save(archive);
         } catch (Exception e) {
-            log.warn("updateArchive failed for id={}: {}", id, e.getMessage());
-            archive.setId(id);
-            return archive;
+            log.error("updateArchive failed for id={}", id, e);
+            throw e;
         }
     }
 
@@ -62,7 +57,8 @@ public class PlantArchiveService {
         try {
             plantArchiveRepository.deleteById(id);
         } catch (Exception e) {
-            log.warn("deleteArchive failed for id={}: {}", id, e.getMessage());
+            log.error("deleteArchive failed for id={}", id, e);
+            throw e;
         }
     }
 }

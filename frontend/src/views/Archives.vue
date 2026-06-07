@@ -165,53 +165,17 @@ const createArchive = async () => {
         }
     } catch (e) {
         console.error('创建失败', e)
-        archives.value.push({
-            id: Date.now(),
-            ...newArchive.value,
-            createdAt: new Date().toISOString()
-        })
-        showAddModal.value = false
+        alert('创建绿植档案失败，请稍后重试')
     }
 }
 
 const loadArchives = async () => {
     try {
         const res = await plantArchiveApi.getByUser(userStore.currentUser.id)
-        archives.value = res.data
+        archives.value = res.data || []
     } catch (e) {
         console.error('加载失败', e)
-        archives.value = [
-            {
-                id: 1,
-                userId: userStore.currentUser.id,
-                customName: '小绿',
-                plantCategoryId: 1,
-                plantCategory: { id: 1, name: '绿萝' },
-                purchaseDate: '2026-05-20',
-                location: '客厅窗台',
-                environment: '室内向阳',
-                reminderEnabled: true,
-                waterInterval: 7,
-                fertilizeInterval: 30,
-                notes: '喜欢散射光',
-                imageUrl: '',
-                createdAt: new Date().toISOString()
-            },
-            {
-                id: 2,
-                userId: userStore.currentUser.id,
-                customName: '肉肉',
-                plantCategoryId: 3,
-                plantCategory: { id: 3, name: '多肉植物' },
-                purchaseDate: '2026-04-15',
-                location: '阳台',
-                environment: '阳台',
-                reminderEnabled: false,
-                notes: '少浇水',
-                imageUrl: '',
-                createdAt: new Date().toISOString()
-            }
-        ]
+        archives.value = []
     }
 }
 

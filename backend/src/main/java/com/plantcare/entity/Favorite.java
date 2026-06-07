@@ -1,5 +1,6 @@
 package com.plantcare.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "favorite", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "target_type", "target_id"})
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Favorite {
 
     @Id

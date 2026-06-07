@@ -130,17 +130,7 @@ const selectedDate = ref(null)
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
-const fallbackPlants = [
-    { id: 1, customName: '小绿', plantCategory: { name: '绿萝' } },
-    { id: 2, customName: '肉肉', plantCategory: { name: '多肉植物' } }
-]
-
-const plantList = computed(() => {
-    if (props.archives && props.archives.length > 0) {
-        return props.archives
-    }
-    return fallbackPlants
-})
+const plantList = computed(() => props.archives || [])
 
 function toLocalDateString(date) {
     const y = date.getFullYear()
