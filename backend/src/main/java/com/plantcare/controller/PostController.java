@@ -1,5 +1,6 @@
 package com.plantcare.controller;
 
+import com.plantcare.dto.TopicDTO;
 import com.plantcare.entity.Post;
 import com.plantcare.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +23,16 @@ public class PostController {
     public ResponseEntity<Page<Post>> getPosts(
             @RequestParam(defaultValue = "question") String postType,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long plantCategoryId,
+            @RequestParam(required = false) String keyword) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(postService.getPostsByType(postType, pageable));
+        return ResponseEntity.ok(postService.getPostsFiltered(postType, plantCategoryId, keyword, pageable));
+    }
+
+    @GetMapping("/topics")
+    public ResponseEntity<List<TopicDTO>> getHotTopics() {
+        return ResponseEntity.ok(postService.getHotTopics());
     }
 
     @GetMapping("/user/{userId}")

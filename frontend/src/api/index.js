@@ -45,6 +45,7 @@ export const careLogApi = {
 
 export const postApi = {
     getList: (params) => api.get('/posts', { params }),
+    getHotTopics: () => api.get('/posts/topics'),
     getByUser: (userId) => api.get(`/posts/user/${userId}`),
     getById: (id) => api.get(`/posts/${id}`),
     create: (data) => api.post('/posts', data),
