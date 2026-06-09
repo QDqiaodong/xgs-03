@@ -10,7 +10,7 @@
             <id>maven-central</id>
             <mirrorOf>*</mirrorOf>
             <name>Maven Central</name>
-            <url>https://repo.maven.apache.org/maven2</url>
+            <url>https://maven.aliyun.com/repository/public</url>
         </mirror>
     </mirrors>
 
@@ -20,7 +20,7 @@
             <repositories>
                 <repository>
                     <id>maven-central</id>
-                    <url>https://repo.maven.apache.org/maven2</url>
+                    <url>https://maven.aliyun.com/repository/public</url>
                     <releases>
                         <enabled>true</enabled>
                     </releases>
@@ -30,7 +30,7 @@
                 </repository>
                 <repository>
                     <id>spring</id>
-                    <url>https://repo.maven.apache.org/maven2</url>
+                    <url>https://maven.aliyun.com/repository/public</url>
                     <releases>
                         <enabled>true</enabled>
                     </releases>
@@ -42,7 +42,7 @@
             <pluginRepositories>
                 <pluginRepository>
                     <id>maven-central-plugin</id>
-                    <url>https://repo.maven.apache.org/maven2</url>
+                    <url>https://maven.aliyun.com/repository/public</url>
                     <releases>
                         <enabled>true</enabled>
                     </releases>
