@@ -59,27 +59,34 @@
         </div>
 
         <div class="post-list">
-            <div v-for="post in posts" :key="post.id" class="post-card card" @click="goToDetail(post.id)">
-                <div class="post-header">
-                    <h3>{{ post.title }}</h3>
-                    <span :class="['status', post.isResolved ? 'resolved' : 'pending']">
-                        {{ post.isResolved ? '已解决' : '待解决' }}
-                    </span>
-                </div>
-                <p class="post-excerpt">{{ post.content.substring(0, 150) }}...</p>
-                <div class="post-meta">
-                    <span>👁️ {{ post.viewCount }} 浏览</span>
-                    <span>💬 {{ post.commentCount }} 评论</span>
-                    <span>👍 {{ post.likeCount }} 点赞</span>
-                </div>
-            </div>
+            <PostCard
+                v-for="post in posts"
+                :key="post.id"
+                :post="post"
+                @click="goToDetail"
+            />
+
+            <PostSkeleton v-for="i in skeletonCount" :key="'skeleton-' + i" />
+
+            <div ref="sentinelRef" class="scroll-sentinel" aria-hidden="true"></div>
         </div>
 
-        <div v-if="posts.length === 0" class="empty-state card">
+        <div v-if="posts.length === 0 && !isLoading" class="empty-state card">
             <div class="empty-icon">💭</div>
             <h3>暂无帖子</h3>
             <p>成为第一个分享的花友吧！</p>
         </div>
+
+        <div v-if="!hasMore && posts.length > 0" class="no-more card">
+            <span>—— 已经到底啦 ——</span>
+        </div>
+
+        <div v-if="loadError && posts.length === 0" class="load-error card">
+            <p>加载失败，请稍后重试</p>
+            <button class="btn btn-primary" @click="retryLoad">重新加载</button>
+        </div>
+
+        <BackToTop :threshold="400" />
 
         <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
             <div class="modal card">
@@ -109,13 +116,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { postApi, plantCategoryApi } from '../api'
 import { useUserStore } from '../stores/user'
+import PostCard from '../components/PostCard.vue'
+import PostSkeleton from '../components/PostSkeleton.vue'
+import BackToTop from '../components/BackToTop.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+
 const posts = ref([])
 const categories = ref([])
 const topics = ref([])
@@ -129,6 +140,17 @@ const newPost = ref({
     content: '',
     plantCategoryId: null
 })
+
+const currentPage = ref(0)
+const pageSize = 10
+const hasMore = ref(true)
+const isLoading = ref(false)
+const isInitialLoaded = ref(false)
+const loadError = ref(false)
+const skeletonCount = ref(4)
+
+const sentinelRef = ref(null)
+let observer = null
 
 const topicTabs = [
     { label: '全部', value: 'all' },
@@ -169,6 +191,75 @@ const getTagStyle = (topic) => {
     }
 }
 
+const resetListState = () => {
+    posts.value = []
+    currentPage.value = 0
+    hasMore.value = true
+    loadError.value = false
+    isInitialLoaded.value = false
+}
+
+const buildParams = () => {
+    const params = {
+        postType: activeTab.value,
+        page: currentPage.value,
+        size: pageSize
+    }
+    if (selectedTopic.value) {
+        if (selectedTopic.value.startsWith('plant_')) {
+            params.plantCategoryId = selectedTopic.value.replace('plant_', '')
+        } else if (selectedTopic.value.startsWith('keyword_')) {
+            params.keyword = selectedTopic.value.replace('keyword_', '')
+        }
+    }
+    return params
+}
+
+const loadPosts = async () => {
+    if (isLoading.value || !hasMore.value) return
+
+    isLoading.value = true
+    loadError.value = false
+
+    try {
+        const params = buildParams()
+        const res = await postApi.getList(params)
+        const content = res.data.content || []
+        const totalPages = res.data.totalPages ?? 1
+
+        if (currentPage.value === 0) {
+            posts.value = content
+        } else {
+            posts.value = [...posts.value, ...content]
+        }
+
+        currentPage.value += 1
+        hasMore.value = currentPage.value < totalPages && content.length > 0
+        isInitialLoaded.value = true
+    } catch (e) {
+        console.error('加载失败', e)
+        loadError.value = true
+        if (!isInitialLoaded.value) {
+            posts.value = [
+                { id: 1, title: '绿萝叶子发黄怎么办？', content: '最近发现我的绿萝叶子开始发黄，浇水频率是每周一次，放在客厅窗台，有散射光。不知道是什么原因，求大神指点！', viewCount: 128, commentCount: 12, likeCount: 5, isResolved: false },
+                { id: 2, title: '多肉黑腐病如何处理', content: '夏天到了，我的多肉好像得了黑腐病，根部已经开始变黑，叶子也开始化水...', viewCount: 256, commentCount: 24, likeCount: 18, isResolved: true },
+                { id: 3, title: '君子兰不开花是什么原因？', content: '养了三年的君子兰，一直长得很好，但就是不开花，施肥也正常，光照也充足...', viewCount: 89, commentCount: 8, likeCount: 3, isResolved: false }
+            ]
+            hasMore.value = false
+            isInitialLoaded.value = true
+        }
+    } finally {
+        isLoading.value = false
+    }
+}
+
+const retryLoad = () => {
+    resetListState()
+    nextTick(() => {
+        loadPosts()
+    })
+}
+
 const selectTopic = (topic) => {
     if (selectedTopic.value === topic.type) {
         clearTopicFilter()
@@ -176,18 +267,28 @@ const selectTopic = (topic) => {
     }
     selectedTopic.value = topic.type
     selectedTopicName.value = topic.name
-    loadPosts()
+    resetListState()
+    nextTick(() => {
+        loadPosts()
+    })
 }
 
 const clearTopicFilter = () => {
     selectedTopic.value = null
     selectedTopicName.value = ''
-    loadPosts()
+    resetListState()
+    nextTick(() => {
+        loadPosts()
+    })
 }
 
 const switchTab = (tab) => {
+    if (activeTab.value === tab) return
     activeTab.value = tab
-    loadPosts()
+    resetListState()
+    nextTick(() => {
+        loadPosts()
+    })
 }
 
 const goToDetail = (id) => {
@@ -203,7 +304,10 @@ const createPost = async () => {
         }
         await postApi.create(data)
         showAddModal.value = false
-        loadPosts()
+        resetListState()
+        nextTick(() => {
+            loadPosts()
+        })
         loadTopics()
         newPost.value = {
             title: '',
@@ -223,28 +327,6 @@ const createPost = async () => {
             createdAt: new Date().toISOString()
         })
         showAddModal.value = false
-    }
-}
-
-const loadPosts = async () => {
-    try {
-        const params = { postType: activeTab.value, page: 0, size: 20 }
-        if (selectedTopic.value) {
-            if (selectedTopic.value.startsWith('plant_')) {
-                params.plantCategoryId = selectedTopic.value.replace('plant_', '')
-            } else if (selectedTopic.value.startsWith('keyword_')) {
-                params.keyword = selectedTopic.value.replace('keyword_', '')
-            }
-        }
-        const res = await postApi.getList(params)
-        posts.value = res.data.content || []
-    } catch (e) {
-        console.error('加载失败', e)
-        posts.value = [
-            { id: 1, title: '绿萝叶子发黄怎么办？', content: '最近发现我的绿萝叶子开始发黄，浇水频率是每周一次，放在客厅窗台，有散射光。不知道是什么原因，求大神指点！', viewCount: 128, commentCount: 12, likeCount: 5, isResolved: false },
-            { id: 2, title: '多肉黑腐病如何处理', content: '夏天到了，我的多肉好像得了黑腐病，根部已经开始变黑，叶子也开始化水...', viewCount: 256, commentCount: 24, likeCount: 18, isResolved: true },
-            { id: 3, title: '君子兰不开花是什么原因？', content: '养了三年的君子兰，一直长得很好，但就是不开花，施肥也正常，光照也充足...', viewCount: 89, commentCount: 8, likeCount: 3, isResolved: false }
-        ]
     }
 }
 
@@ -268,9 +350,49 @@ const loadTopics = async () => {
     }
 }
 
+const setupInfiniteScroll = () => {
+    if (!('IntersectionObserver' in window)) {
+        window.addEventListener('scroll', handleScrollFallback, { passive: true })
+        return
+    }
+
+    observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting && hasMore.value && !isLoading.value) {
+                loadPosts()
+            }
+        })
+    }, {
+        rootMargin: '200px 0px',
+        threshold: 0.01
+    })
+
+    nextTick(() => {
+        if (sentinelRef.value) {
+            observer.observe(sentinelRef.value)
+        }
+    })
+}
+
+const handleScrollFallback = () => {
+    if (isLoading.value || !hasMore.value) return
+
+    const scrollTop = window.scrollY || document.documentElement.scrollTop
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight
+    const docHeight = document.documentElement.scrollHeight
+
+    if (scrollTop + windowHeight >= docHeight - 300) {
+        loadPosts()
+    }
+}
+
+watch([activeTab, selectedTopic], () => {
+})
+
 onMounted(async () => {
     loadPosts()
     loadTopics()
+    setupInfiniteScroll()
     try {
         const res = await plantCategoryApi.getAll()
         categories.value = res.data
@@ -281,6 +403,13 @@ onMounted(async () => {
             { id: 3, name: '多肉植物' }
         ]
     }
+})
+
+onUnmounted(() => {
+    if (observer) {
+        observer.disconnect()
+    }
+    window.removeEventListener('scroll', handleScrollFallback)
 })
 </script>
 
@@ -443,59 +572,10 @@ onMounted(async () => {
     border-left: 4px solid #8bc34a;
 }
 
-.post-card {
-    cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-    margin-bottom: 16px;
-}
-
-.post-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
-}
-
-.post-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-}
-
-.post-header h3 {
-    font-size: 18px;
-    color: #1b5e20;
-    margin: 0;
-    flex: 1;
-}
-
-.status {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    margin-left: 12px;
-}
-
-.status.resolved {
-    background: #e8f5e9;
-    color: #388e3c;
-}
-
-.status.pending {
-    background: #fff3e0;
-    color: #f57c00;
-}
-
-.post-excerpt {
-    color: #666;
-    line-height: 1.6;
-    margin-bottom: 16px;
-}
-
-.post-meta {
-    display: flex;
-    gap: 20px;
-    font-size: 13px;
-    color: #888;
+.scroll-sentinel {
+    width: 100%;
+    height: 1px;
+    pointer-events: none;
 }
 
 .empty-state {
@@ -515,6 +595,25 @@ onMounted(async () => {
 
 .empty-state p {
     color: #666;
+}
+
+.no-more {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-size: 14px;
+    background: transparent;
+    box-shadow: none;
+}
+
+.load-error {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.load-error p {
+    color: #c62828;
+    margin-bottom: 16px;
 }
 
 .modal-overlay {
