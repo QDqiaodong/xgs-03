@@ -11,13 +11,13 @@ import com.plantcare.repository.CareLogRepository;
 import com.plantcare.repository.PlantArchiveRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -32,8 +32,11 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class CareLogService {
 
+    private static final String CACHE_NAME = "careStatistics";
+
     private final CareLogRepository careLogRepository;
     private final PlantArchiveRepository plantArchiveRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public List<CareLog> getPlantLogs(Long plantArchiveId) {
         return careLogRepository.findByPlantArchiveIdOrderByLogDateDescCreatedAtDesc(plantArchiveId);
@@ -97,23 +100,36 @@ public class CareLogService {
         return careLogRepository.findById(id);
     }
 
-    @CacheEvict(value = "careStatistics", key = "#log.userId")
     public CareLog createLog(CareLog log) {
-        return careLogRepository.save(log);
+        CareLog saved = careLogRepository.save(log);
+        evictUserStatisticsCache(log.getUserId());
+        return saved;
     }
 
-    @CacheEvict(value = "careStatistics", key = "#result.userId")
     public CareLog updateLog(Long id, CareLog log) {
         log.setId(id);
-        return careLogRepository.save(log);
+        CareLog saved = careLogRepository.save(log);
+        evictUserStatisticsCache(saved.getUserId());
+        return saved;
     }
 
-    @CacheEvict(value = "careStatistics", allEntries = true)
     public void deleteLog(Long id) {
+        Optional<CareLog> logOpt = careLogRepository.findById(id);
         careLogRepository.deleteById(id);
+        if (logOpt.isPresent()) {
+            evictUserStatisticsCache(logOpt.get().getUserId());
+        }
     }
 
-    @Cacheable(value = "careStatistics", key = "#userId + '_' + (#startDate != null ? #startDate.toString() : 'null') + '_' + (#endDate != null ? #endDate.toString() : 'null')")
+    private void evictUserStatisticsCache(Long userId) {
+        String pattern = CACHE_NAME + "::" + userId + "_*";
+        Set<String> keys = redisTemplate.keys(pattern);
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+    }
+
+    @Cacheable(value = CACHE_NAME, key = "#userId + '_' + (#startDate != null ? #startDate.toString() : 'null') + '_' + (#endDate != null ? #endDate.toString() : 'null')")
     public CareStatisticsDTO getStatistics(Long userId, LocalDate startDate, LocalDate endDate) {
         if (startDate == null) {
             startDate = LocalDate.now().minusYears(1);
