@@ -54,11 +54,15 @@ export const postApi = {
 }
 
 export const commentApi = {
-    getByPost: (postId) => api.get(`/comments/post/${postId}`),
+    getByPost: (postId, params = {}) => api.get(`/comments/post/${postId}`, { params }),
     getByUser: (userId) => api.get(`/comments/user/${userId}`),
     create: (data) => api.post('/comments', data),
     delete: (id) => api.delete(`/comments/${id}`),
-    setBestAnswer: (id, isBest) => api.put(`/comments/${id}/best-answer`, null, { params: { isBest } })
+    setBestAnswer: (id, isBest) => api.put(`/comments/${id}/best-answer`, null, { params: { isBest } }),
+    like: (id, userId) => api.post(`/comments/${id}/like`, { userId }),
+    unlike: (id, userId) => api.delete(`/comments/${id}/like`, { params: { userId } }),
+    toggleLike: (id, userId) => api.post(`/comments/${id}/toggle-like`, { userId }),
+    getLikeStatus: (id, userId) => api.get(`/comments/${id}/like-status`, { params: { userId } })
 }
 
 export const favoriteApi = {

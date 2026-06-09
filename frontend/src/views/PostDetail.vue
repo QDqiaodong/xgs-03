@@ -25,7 +25,17 @@
         </div>
 
         <div class="comments-section">
-            <h2 class="section-title">💬 评论 ({{ comments.length }})</h2>
+            <div class="comments-header">
+                <h2 class="section-title">💬 评论 ({{ comments.length }})</h2>
+                <div class="sort-tabs">
+                    <button :class="['sort-btn', { active: sortBy === 'time' }]" @click="changeSort('time')">
+                        🕐 最新
+                    </button>
+                    <button :class="['sort-btn', { active: sortBy === 'likes' }]" @click="changeSort('likes')">
+                        🔥 最热
+                    </button>
+                </div>
+            </div>
 
             <div class="comment-form card">
                 <div class="form-group">
@@ -45,7 +55,9 @@
                 </div>
                 <div class="comment-content">{{ comment.content }}</div>
                 <div class="comment-footer">
-                    <button class="like-btn" @click="likeComment(comment.id)">👍 {{ comment.likeCount }}</button>
+                    <button :class="['like-btn', { liked: comment.liked }]" @click="toggleCommentLike(comment)">
+                        {{ comment.liked ? '❤️' : '👍' }} {{ comment.likeCount }}
+                    </button>
                     <button v-if="!comment.isBestAnswer" class="btn btn-text" @click="setBestAnswer(comment.id)">设为最佳答案</button>
                 </div>
             </div>
@@ -69,6 +81,7 @@ const post = ref(null)
 const comments = ref([])
 const newComment = ref('')
 const isFavorited = ref(false)
+const sortBy = ref('time')
 
 const formatDate = (date) => {
     if (!date) return ''
@@ -93,6 +106,7 @@ const submitComment = async () => {
             userId: userStore.currentUser.id,
             user: { nickname: userStore.currentUser.nickname },
             likeCount: 0,
+            liked: false,
             isBestAnswer: false,
             createdAt: new Date().toISOString()
         })
@@ -100,17 +114,35 @@ const submitComment = async () => {
     }
 }
 
-const likeComment = (id) => {
-    const comment = comments.value.find(c => c.id === id)
-    if (comment) {
-        comment.likeCount++
+const toggleCommentLike = async (comment) => {
+    try {
+        const res = await commentApi.toggleLike(comment.id, userStore.currentUser.id)
+        comment.liked = res.data.liked
+        comment.likeCount = res.data.comment.likeCount
+    } catch (e) {
+        console.error('点赞操作失败', e)
+        comment.liked = !comment.liked
+        comment.likeCount += comment.liked ? 1 : -1
     }
 }
 
-const setBestAnswer = (id) => {
-    comments.value.forEach(c => {
-        c.isBestAnswer = c.id === id
-    })
+const setBestAnswer = async (id) => {
+    try {
+        await commentApi.setBestAnswer(id, true)
+        comments.value.forEach(c => {
+            c.isBestAnswer = c.id === id
+        })
+    } catch (e) {
+        console.error('设置最佳答案失败', e)
+        comments.value.forEach(c => {
+            c.isBestAnswer = c.id === id
+        })
+    }
+}
+
+const changeSort = (sort) => {
+    sortBy.value = sort
+    loadComments()
 }
 
 const toggleFavorite = async () => {
@@ -138,13 +170,16 @@ const toggleFavorite = async () => {
 
 const loadComments = async () => {
     try {
-        const res = await commentApi.getByPost(route.params.id)
+        const res = await commentApi.getByPost(route.params.id, {
+            userId: userStore.currentUser.id,
+            sortBy: sortBy.value
+        })
         comments.value = res.data
     } catch (e) {
         console.error('加载评论失败', e)
         comments.value = [
-            { id: 1, content: '可能是浇水太多了，建议减少浇水频率，绿萝比较耐旱的。检查一下根部有没有腐烂，如果有的话需要剪掉重新发根。', user: { nickname: '养花达人' }, likeCount: 12, isBestAnswer: true, createdAt: '2024-06-01T10:30:00' },
-            { id: 2, content: '我之前也遇到过这个问题，后来搬到通风更好的地方就好了。', user: { nickname: '绿植新手' }, likeCount: 3, isBestAnswer: false, createdAt: '2024-06-01T11:20:00' }
+            { id: 1, content: '可能是浇水太多了，建议减少浇水频率，绿萝比较耐旱的。检查一下根部有没有腐烂，如果有的话需要剪掉重新发根。', user: { nickname: '养花达人' }, likeCount: 12, liked: false, isBestAnswer: true, createdAt: '2024-06-01T10:30:00' },
+            { id: 2, content: '我之前也遇到过这个问题，后来搬到通风更好的地方就好了。', user: { nickname: '绿植新手' }, likeCount: 3, liked: false, isBestAnswer: false, createdAt: '2024-06-01T11:20:00' }
         ]
     }
 }
@@ -245,10 +280,44 @@ onMounted(async () => {
     border-top: 1px solid #eee;
 }
 
+.comments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
 .section-title {
     font-size: 20px;
     color: #1b5e20;
-    margin-bottom: 16px;
+    margin: 0;
+}
+
+.sort-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.sort-btn {
+    padding: 6px 16px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.sort-btn:hover {
+    border-color: #4caf50;
+    color: #4caf50;
+}
+
+.sort-btn.active {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    border-color: #4caf50;
+    color: white;
 }
 
 .comment-form {
@@ -334,13 +403,19 @@ onMounted(async () => {
     cursor: pointer;
     color: #666;
     font-size: 13px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background 0.2s;
+    padding: 4px 12px;
+    border-radius: 16px;
+    transition: all 0.2s;
 }
 
 .like-btn:hover {
     background: #f5f5f5;
+    transform: scale(1.05);
+}
+
+.like-btn.liked {
+    background: #ffebee;
+    color: #e53935;
 }
 
 .btn-text {
