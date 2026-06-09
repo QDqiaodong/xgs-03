@@ -1,5 +1,6 @@
 package com.plantcare.controller;
 
+import com.plantcare.dto.CareStatisticsDTO;
 import com.plantcare.entity.CareLog;
 import com.plantcare.service.CareLogService;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,14 @@ public class CareLogController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<CareLog>> getUserLogs(@PathVariable Long userId) {
         return ResponseEntity.ok(careLogService.getUserLogs(userId));
+    }
+
+    @GetMapping("/user/{userId}/statistics")
+    public ResponseEntity<CareStatisticsDTO> getUserStatistics(
+            @PathVariable Long userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(careLogService.getStatistics(userId, startDate, endDate));
     }
 
     @GetMapping("/{id}")
