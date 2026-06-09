@@ -17,4 +17,6 @@ public interface CareLogRepository extends JpaRepository<CareLog, Long>, JpaSpec
     List<CareLog> findByUserIdOrderByLogDateDesc(Long userId);
 
     Page<CareLog> findByPlantArchiveIdOrderByLogDateDescCreatedAtDesc(Long plantArchiveId, Pageable pageable);
+
+    CareLog findTopByPlantArchiveIdAndOperationTypeOrderByLogDateDescCreatedAtDesc(Long plantArchiveId, String operationType);
 }

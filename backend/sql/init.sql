@@ -123,6 +123,28 @@ CREATE TABLE IF NOT EXISTS favorite (
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS care_reminder (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    plant_archive_id BIGINT NOT NULL,
+    reminder_type VARCHAR(50) NOT NULL COMMENT '提醒类型:浇水/施肥',
+    reminder_date DATE NOT NULL COMMENT '提醒日期',
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '状态:PENDING待处理/COMPLETED已完成/DEFERRED已延期/CANCELLED已取消',
+    completed_at TIMESTAMP NULL COMMENT '完成时间',
+    deferred_count INT DEFAULT 0 COMMENT '延期次数',
+    care_log_id BIGINT NULL COMMENT '关联的养护日志ID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_plant_id (plant_archive_id),
+    INDEX idx_status (status),
+    INDEX idx_reminder_date (reminder_date),
+    UNIQUE KEY uk_plant_type_date (plant_archive_id, reminder_type, reminder_date),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    FOREIGN KEY (plant_archive_id) REFERENCES plant_archive(id) ON DELETE CASCADE,
+    FOREIGN KEY (care_log_id) REFERENCES care_log(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO plant_category (name, scientific_name, category, light_requirement, water_requirement, temperature_range, humidity, fertilization, pruning, common_diseases, description) VALUES
 ('绿萝', 'Epipremnum aureum', '观叶植物', '散射光，耐阴', '保持土壤微湿，避免积水', '15-30℃', '40-70%', '生长季每月施一次稀薄液肥', '定期修剪过长藤蔓', '叶斑病、根腐病', '绿萝是非常常见的室内观叶植物，具有很强的空气净化能力，能有效吸收甲醛。'),
 ('吊兰', 'Chlorophytum comosum', '观叶植物', '明亮散射光', '保持土壤湿润，忌积水', '15-25℃', '50-70%', '春夏每月施一次复合肥', '修剪枯黄叶片', '叶尖干枯、根腐病', '吊兰适应性强，是新手养植的首选，垂吊的枝条极具观赏性。'),
