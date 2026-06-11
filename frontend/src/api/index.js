@@ -79,4 +79,27 @@ export const userApi = {
     update: (id, data) => api.put(`/users/${id}`, data)
 }
 
+export const recommendationApi = {
+    getPlantRecommendations: (userId, type, limit = 10) => api.get(`/recommendations/plants/${userId}`, {
+        params: { type, limit }
+    }),
+    getSimilarRecommendations: (userId, limit = 10) => api.get(`/recommendations/plants/${userId}/similar`, {
+        params: { limit }
+    }),
+    getEasyCareRecommendations: (userId, limit = 10) => api.get(`/recommendations/plants/${userId}/easy`, {
+        params: { limit }
+    }),
+    getPopularRecommendations: (userId, limit = 10) => api.get(`/recommendations/plants/${userId}/popular`, {
+        params: { limit }
+    }),
+    getUserProfile: (userId) => api.get(`/recommendations/profile/${userId}`)
+}
+
+export const browseHistoryApi = {
+    recordBrowse: (data) => api.post('/browse-history', data),
+    getByUser: (userId) => api.get(`/browse-history/user/${userId}`),
+    getByUserAndType: (userId, targetType) => api.get(`/browse-history/user/${userId}/type/${targetType}`),
+    delete: (params) => api.delete('/browse-history', { params })
+}
+
 export default api

@@ -54,6 +54,12 @@ public class PlantCategory {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    @Column(name = "difficulty_level")
+    private Integer difficultyLevel = 1;
+
+    @Column(name = "popularity_score")
+    private Integer popularityScore = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
