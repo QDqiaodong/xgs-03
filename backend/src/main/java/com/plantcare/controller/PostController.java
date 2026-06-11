@@ -25,8 +25,12 @@ public class PostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long plantCategoryId,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "latest") String sort) {
         Pageable pageable = PageRequest.of(page, size);
+        if ("hotness".equalsIgnoreCase(sort)) {
+            return ResponseEntity.ok(postService.getPostsFilteredByHotness(postType, plantCategoryId, keyword, pageable));
+        }
         return ResponseEntity.ok(postService.getPostsFiltered(postType, plantCategoryId, keyword, pageable));
     }
 

@@ -90,11 +90,13 @@ CREATE TABLE IF NOT EXISTS post (
     like_count INT DEFAULT 0 COMMENT '点赞数',
     comment_count INT DEFAULT 0 COMMENT '评论数',
     is_resolved BOOLEAN DEFAULT FALSE COMMENT '是否已解决',
+    hotness_score DOUBLE DEFAULT 0.0 COMMENT '热度分',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user_id (user_id),
     INDEX idx_post_type (post_type),
     INDEX idx_created_at (created_at),
+    INDEX idx_hotness_score (hotness_score),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (plant_category_id) REFERENCES plant_category(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

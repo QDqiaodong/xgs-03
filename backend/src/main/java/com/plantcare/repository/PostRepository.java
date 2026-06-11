@@ -38,4 +38,30 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByKeywordOrderByCreatedAtDesc(
             @Param("keyword") String keyword,
             Pageable pageable);
+
+    Page<Post> findAllByOrderByHotnessScoreDesc(Pageable pageable);
+
+    Page<Post> findByPostTypeOrderByHotnessScoreDesc(String postType, Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.postType = :postType AND p.plantCategoryId = :plantCategoryId ORDER BY p.hotnessScore DESC")
+    Page<Post> findByPostTypeAndPlantCategoryIdOrderByHotnessScoreDesc(
+            @Param("postType") String postType,
+            @Param("plantCategoryId") Long plantCategoryId,
+            Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.postType = :postType AND (p.title LIKE %:keyword% OR p.content LIKE %:keyword%) ORDER BY p.hotnessScore DESC")
+    Page<Post> findByPostTypeAndKeywordOrderByHotnessScoreDesc(
+            @Param("postType") String postType,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.plantCategoryId = :plantCategoryId ORDER BY p.hotnessScore DESC")
+    Page<Post> findByPlantCategoryIdOrderByHotnessScoreDesc(
+            @Param("plantCategoryId") Long plantCategoryId,
+            Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword% ORDER BY p.hotnessScore DESC")
+    Page<Post> findByKeywordOrderByHotnessScoreDesc(
+            @Param("keyword") String keyword,
+            Pageable pageable);
 }

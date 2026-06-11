@@ -50,7 +50,8 @@ export const postApi = {
     getById: (id) => api.get(`/posts/${id}`),
     create: (data) => api.post('/posts', data),
     update: (id, data) => api.put(`/posts/${id}`, data),
-    delete: (id) => api.delete(`/posts/${id}`)
+    delete: (id) => api.delete(`/posts/${id}`),
+    getHotList: (params) => api.get('/posts', { params: { ...params, sort: 'hotness' } })
 }
 
 export const commentApi = {

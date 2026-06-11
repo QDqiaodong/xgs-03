@@ -16,6 +16,7 @@
                 <span>👁️ {{ post.viewCount }} 浏览</span>
                 <span>💬 {{ post.commentCount }} 评论</span>
                 <span>👍 {{ post.likeCount }} 点赞</span>
+                <span v-if="post.hotnessScore > 0" class="hotness-badge">🔥 {{ formatHotness(post.hotnessScore) }}</span>
             </div>
         </template>
         <template v-else>
@@ -46,6 +47,13 @@ let observer = null
 
 const handleClick = () => {
     emit('click', props.post.id)
+}
+
+const formatHotness = (score) => {
+    if (score >= 1000) {
+        return (score / 1000).toFixed(1) + 'k'
+    }
+    return Math.round(score)
 }
 
 onMounted(() => {
@@ -137,6 +145,17 @@ onUnmounted(() => {
     gap: 20px;
     font-size: 13px;
     color: #888;
+    align-items: center;
+}
+
+.hotness-badge {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    color: #e65100;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 12px;
+    margin-left: auto;
 }
 
 .post-placeholder {

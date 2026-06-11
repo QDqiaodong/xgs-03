@@ -52,6 +52,20 @@
             >
                 经验分享
             </button>
+            <div class="sort-switch">
+                <button
+                    :class="['sort-btn', sortBy === 'latest' && 'active']"
+                    @click="switchSort('latest')"
+                >
+                    最新
+                </button>
+                <button
+                    :class="['sort-btn', sortBy === 'hotness' && 'active']"
+                    @click="switchSort('hotness')"
+                >
+                    🔥 最热
+                </button>
+            </div>
         </div>
 
         <div v-if="selectedTopic" class="filter-info card">
@@ -132,6 +146,7 @@ const categories = ref([])
 const topics = ref([])
 const activeTab = ref('question')
 const activeTopicTab = ref('all')
+const sortBy = ref('latest')
 const selectedTopic = ref(null)
 const selectedTopicName = ref('')
 const showAddModal = ref(false)
@@ -203,7 +218,8 @@ const buildParams = () => {
     const params = {
         postType: activeTab.value,
         page: currentPage.value,
-        size: pageSize
+        size: pageSize,
+        sort: sortBy.value
     }
     if (selectedTopic.value) {
         if (selectedTopic.value.startsWith('plant_')) {
@@ -285,6 +301,15 @@ const clearTopicFilter = () => {
 const switchTab = (tab) => {
     if (activeTab.value === tab) return
     activeTab.value = tab
+    resetListState()
+    nextTick(() => {
+        loadPosts()
+    })
+}
+
+const switchSort = (sort) => {
+    if (sortBy.value === sort) return
+    sortBy.value = sort
     resetListState()
     nextTick(() => {
         loadPosts()
@@ -545,6 +570,38 @@ onUnmounted(() => {
     display: flex;
     gap: 12px;
     margin-bottom: 24px;
+    align-items: center;
+}
+
+.sort-switch {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+    background: #f0f0f0;
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.sort-btn {
+    padding: 6px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #666;
+    transition: all 0.3s;
+}
+
+.sort-btn:hover {
+    color: #388e3c;
+}
+
+.sort-btn.active {
+    background: white;
+    color: #2e7d32;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .tab {

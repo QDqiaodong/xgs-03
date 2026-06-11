@@ -48,6 +48,9 @@ public class Post {
     @Column(name = "is_resolved")
     private Boolean isResolved = false;
 
+    @Column(name = "hotness_score")
+    private Double hotnessScore = 0.0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;

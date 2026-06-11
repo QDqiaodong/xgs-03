@@ -19,6 +19,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PlantCategoryRepository plantCategoryRepository;
+    private final HotnessService hotnessService;
 
     private static final List<String> PROBLEM_KEYWORDS = Arrays.asList(
             "发黄", "枯萎", "烂根", "黑腐", "虫害", "病害", "掉叶", "落叶", "不开花",
@@ -48,6 +49,25 @@ public class PostService {
             return postRepository.findByKeywordOrderByCreatedAtDesc(keyword, pageable);
         }
         return postRepository.findByPostTypeOrderByCreatedAtDesc(postType, pageable);
+    }
+
+    public Page<Post> getPostsFilteredByHotness(String postType, Long plantCategoryId, String keyword, Pageable pageable) {
+        if (plantCategoryId != null) {
+            if (postType != null && !postType.isEmpty()) {
+                return postRepository.findByPostTypeAndPlantCategoryIdOrderByHotnessScoreDesc(postType, plantCategoryId, pageable);
+            }
+            return postRepository.findByPlantCategoryIdOrderByHotnessScoreDesc(plantCategoryId, pageable);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            if (postType != null && !postType.isEmpty()) {
+                return postRepository.findByPostTypeAndKeywordOrderByHotnessScoreDesc(postType, keyword, pageable);
+            }
+            return postRepository.findByKeywordOrderByHotnessScoreDesc(keyword, pageable);
+        }
+        if (postType != null && !postType.isEmpty()) {
+            return postRepository.findByPostTypeOrderByHotnessScoreDesc(postType, pageable);
+        }
+        return postRepository.findAllByOrderByHotnessScoreDesc(pageable);
     }
 
     public List<TopicDTO> getHotTopics() {
@@ -121,6 +141,7 @@ public class PostService {
     }
 
     public Post createPost(Post post) {
+        post.setHotnessScore(hotnessService.calculateInitialHotness());
         return postRepository.save(post);
     }
 
