@@ -67,7 +67,7 @@ public class PlantPhotoService {
             return plantPhotoRepository.save(photo);
         } catch (Exception e) {
             log.error("uploadPhoto failed for plantArchiveId={}", plantArchiveId, e);
-            throw e;
+            throw new RuntimeException("Upload photo failed", e);
         }
     }
 
