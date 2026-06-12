@@ -32,6 +32,10 @@
                     <span class="mini-tag">💧 每{{ archive.waterInterval }}天浇水</span>
                     <span class="mini-tag">🧪 每{{ archive.fertilizeInterval }}天施肥</span>
                 </div>
+                <PlantTagSelector
+                    :plant-archive-id="route.params.id"
+                    @tags-updated="handleTagsUpdated"
+                />
                 <div class="actions">
                     <button class="btn btn-primary" @click="showAddLogModal = true">+ 记录养护</button>
                 </div>
@@ -194,6 +198,7 @@ import { useUserStore } from '../stores/user'
 import LazyImage from '../components/LazyImage.vue'
 import GrowthTimeline from '../components/GrowthTimeline.vue'
 import PlantAlbum from '../components/PlantAlbum.vue'
+import PlantTagSelector from '../components/PlantTagSelector.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -383,6 +388,10 @@ const handleCoverChanged = async (coverPhoto) => {
     if (archive.value && coverPhoto) {
         archive.value.imageUrl = coverPhoto.imageUrl
     }
+}
+
+const handleTagsUpdated = () => {
+    // 标签更新后可以触发列表刷新等操作
 }
 
 onMounted(async () => {

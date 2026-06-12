@@ -270,5 +270,37 @@ CREATE TABLE IF NOT EXISTS point_record (
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS tag (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    name VARCHAR(50) NOT NULL COMMENT '标签名称',
+    color VARCHAR(20) DEFAULT '#4caf50' COMMENT '标签颜色',
+    sort_order INT DEFAULT 0 COMMENT '排序序号',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_name (user_id, name),
+    INDEX idx_user_id (user_id),
+    INDEX idx_sort_order (sort_order),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS plant_archive_tag (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    plant_archive_id BIGINT NOT NULL COMMENT '植物档案ID',
+    tag_id BIGINT NOT NULL COMMENT '标签ID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_plant_tag (plant_archive_id, tag_id),
+    INDEX idx_plant_id (plant_archive_id),
+    INDEX idx_tag_id (tag_id),
+    FOREIGN KEY (plant_archive_id) REFERENCES plant_archive(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO user (username, nickname, avatar, points) VALUES
 ('plant_lover', '绿植爱好者', 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cute%20gardener%20avatar&image_size=square', 100);
+
+INSERT INTO tag (user_id, name, color, sort_order) VALUES
+(1, '卧室', '#2196f3', 1),
+(1, '办公室', '#ff9800', 2),
+(1, '喜阴', '#9c27b0', 3),
+(1, '待观察', '#f44336', 4);

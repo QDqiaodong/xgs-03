@@ -142,4 +142,29 @@ export const checkInApi = {
     getAchievements: (userId) => api.get(`/checkin/achievements/${userId}`)
 }
 
+export const tagApi = {
+    getByUser: (userId) => api.get(`/tags/user/${userId}`),
+    getById: (id) => api.get(`/tags/${id}`),
+    create: (data) => api.post('/tags', data),
+    update: (id, data) => api.put(`/tags/${id}`, data),
+    rename: (id, name) => api.put(`/tags/${id}/rename`, { name }),
+    delete: (id) => api.delete(`/tags/${id}`),
+    updateOrder: (userId, tagIds) => api.put('/tags/order', tagIds, { params: { userId } })
+}
+
+export const plantArchiveTagApi = {
+    getByPlant: (plantArchiveId) => api.get(`/plant-archive-tags/plant/${plantArchiveId}`),
+    getByPlants: (plantArchiveIds) => api.get('/plant-archive-tags/plants/batch', { params: { plantArchiveIds }, paramsSerializer: { indexes: null } }),
+    addTag: (plantArchiveId, tagId) => api.post('/plant-archive-tags', { plantArchiveId, tagId }),
+    setTags: (plantArchiveId, tagIds) => api.put(`/plant-archive-tags/plant/${plantArchiveId}`, tagIds),
+    removeTag: (plantArchiveId, tagId) => api.delete('/plant-archive-tags', { params: { plantArchiveId, tagId } }),
+    getByTag: (userId, tagId) => api.get(`/plant-archive-tags/user/${userId}/tag/${tagId}`),
+    getByTags: (userId, tagIds) => api.get(`/plant-archive-tags/user/${userId}/tags`, {
+        params: { tagIds },
+        paramsSerializer: { indexes: null }
+    }),
+    getCountByTag: (tagId) => api.get(`/plant-archive-tags/tag/${tagId}/count`),
+    getCountByTags: (tagIds) => api.get('/plant-archive-tags/tags/count', { params: { tagIds }, paramsSerializer: { indexes: null } })
+}
+
 export default api

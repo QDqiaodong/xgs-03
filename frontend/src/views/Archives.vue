@@ -7,16 +7,55 @@
 
         <CareCalendar ref="calendarRef" :archives="archives" />
 
+        <TagManager @tags-updated="handleTagsUpdated" />
+
+        <div v-if="tags.length > 0" class="tag-filter-section card">
+            <h3 class="section-title">🔍 按标签筛选</h3>
+            <div class="tag-filter-list">
+                <button
+                    class="tag-filter-btn"
+                    :class="{ active: selectedTagIds.length === 0 }"
+                    @click="clearTagFilter"
+                >
+                    全部
+                </button>
+                <button
+                    v-for="tag in tags"
+                    :key="tag.id"
+                    class="tag-filter-btn"
+                    :class="{ active: selectedTagIds.includes(tag.id) }"
+                    :style="selectedTagIds.includes(tag.id) ? { background: tag.color, borderColor: tag.color } : {}"
+                    @click="toggleTagFilter(tag.id)"
+                >
+                    <span class="filter-dot" :style="{ background: tag.color }"></span>
+                    {{ tag.name }}
+                    <span class="filter-count">({{ getTagPlantCount(tag.id) }})</span>
+                </button>
+            </div>
+        </div>
+
+        <div v-if="filteredArchives.length === 0 && archives.length > 0" class="empty-state card">
+            <div class="empty-icon">🔍</div>
+            <h3>没有匹配的绿植</h3>
+            <p>当前选中的标签下没有绿植，请尝试其他标签或清除筛选。</p>
+            <button class="btn btn-primary" @click="clearTagFilter">清除筛选</button>
+        </div>
+
         <div v-if="archives.length === 0" class="empty-state card">
             <div class="empty-icon">🌱</div>
             <h3>还没有绿植档案</h3>
             <p>点击上方按钮，开始记录您的第一盆绿植吧！</p>
         </div>
 
-        <h2 class="section-title">🪴 我的绿植列表</h2>
+        <h2 class="section-title">
+            🪴 我的绿植列表
+            <span v-if="selectedTagIds.length > 0" class="filter-indicator">
+                (已筛选 {{ filteredArchives.length }}/{{ archives.length }})
+            </span>
+        </h2>
 
         <div class="grid grid-3">
-            <div v-for="archive in archives" :key="archive.id" class="archive-card card" @click="goToDetail(archive.id)">
+            <div v-for="archive in filteredArchives" :key="archive.id" class="archive-card card" @click="goToDetail(archive.id)">
                 <div class="archive-image">
                     <LazyImage
                         :src="archive.imageUrl || getDefaultImage()"
@@ -32,6 +71,19 @@
                     <div class="archive-meta">
                         <span>📍 {{ archive.location || '未设置位置' }}</span>
                         <span>📅 {{ formatDate(archive.purchaseDate) }}</span>
+                    </div>
+                    <div v-if="getArchiveTags(archive.id).length > 0" class="archive-tags">
+                        <span
+                            v-for="tag in getArchiveTags(archive.id).slice(0, 3)"
+                            :key="tag.id"
+                            class="archive-tag"
+                            :style="{ background: tag.color, borderColor: tag.color }"
+                        >
+                            {{ tag.name }}
+                        </span>
+                        <span v-if="getArchiveTags(archive.id).length > 3" class="more-tags">
+                            +{{ getArchiveTags(archive.id).length - 3 }}
+                        </span>
                     </div>
                     <div v-if="archive.reminderEnabled" class="reminder-tags">
                         <span class="mini-tag">💧 每{{ archive.waterInterval }}天浇水</span>
@@ -103,12 +155,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { plantArchiveApi, plantCategoryApi } from '../api'
+import { plantArchiveApi, plantCategoryApi, tagApi, plantArchiveTagApi } from '../api'
 import { useUserStore } from '../stores/user'
 import LazyImage from '../components/LazyImage.vue'
 import CareCalendar from '../components/CareCalendar.vue'
+import TagManager from '../components/TagManager.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -127,6 +180,31 @@ const newArchive = ref({
     fertilizeInterval: 30,
     notes: ''
 })
+
+const tags = ref([])
+const selectedTagIds = ref([])
+const archiveTagsMap = ref({})
+const tagPlantCounts = ref({})
+const tagRefreshTrigger = ref(0)
+
+const filteredArchives = computed(() => {
+    if (selectedTagIds.value.length === 0) {
+        return archives.value
+    }
+    return archives.value.filter(archive => {
+        const archiveTags = archiveTagsMap.value[archive.id] || []
+        const archiveTagIds = archiveTags.map(t => t.id)
+        return selectedTagIds.value.some(tagId => archiveTagIds.includes(tagId))
+    })
+})
+
+const getArchiveTags = (archiveId) => {
+    return archiveTagsMap.value[archiveId] || []
+}
+
+const getTagPlantCount = (tagId) => {
+    return tagPlantCounts.value[tagId] || 0
+}
 
 const getDefaultImage = (thumbnail = false) => {
     const size = thumbnail ? 'square' : 'landscape_4_3'
@@ -173,14 +251,74 @@ const loadArchives = async () => {
     try {
         const res = await plantArchiveApi.getByUser(userStore.currentUser.id)
         archives.value = res.data || []
+        if (archives.value.length > 0) {
+            await loadArchiveTags()
+        }
     } catch (e) {
         console.error('加载失败', e)
         archives.value = []
     }
 }
 
+const loadTags = async () => {
+    try {
+        const res = await tagApi.getByUser(userStore.currentUser.id)
+        tags.value = res.data || []
+        await loadTagPlantCounts()
+    } catch (e) {
+        console.error('加载标签失败', e)
+        tags.value = []
+    }
+}
+
+const loadArchiveTags = async () => {
+    try {
+        const archiveIds = archives.value.map(a => a.id)
+        const res = await plantArchiveTagApi.getByPlants(archiveIds)
+        archiveTagsMap.value = res.data || {}
+    } catch (e) {
+        console.error('加载植物标签失败', e)
+        archiveTagsMap.value = {}
+    }
+}
+
+const loadTagPlantCounts = async () => {
+    if (tags.value.length === 0) {
+        tagPlantCounts.value = {}
+        return
+    }
+    try {
+        const tagIds = tags.value.map(t => t.id)
+        const res = await plantArchiveTagApi.getCountByTags(tagIds)
+        tagPlantCounts.value = res.data || {}
+    } catch (e) {
+        console.error('加载标签计数失败', e)
+        tagPlantCounts.value = {}
+    }
+}
+
+const toggleTagFilter = (tagId) => {
+    const index = selectedTagIds.value.indexOf(tagId)
+    if (index > -1) {
+        selectedTagIds.value.splice(index, 1)
+    } else {
+        selectedTagIds.value.push(tagId)
+    }
+}
+
+const clearTagFilter = () => {
+    selectedTagIds.value = []
+}
+
+const handleTagsUpdated = () => {
+    loadTags()
+    loadArchiveTags()
+    tagRefreshTrigger.value++
+}
+
 onMounted(async () => {
     loadArchives()
+    loadTags()
     try {
         const res = await plantCategoryApi.getAll()
         categories.value = res.data
@@ -275,6 +413,96 @@ onMounted(async () => {
     background: #f1f8e9;
     padding: 4px 8px;
     border-radius: 12px;
+}
+
+.tag-filter-section {
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.tag-filter-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tag-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: white;
+    border: 2px solid #c5e1a5;
+    border-radius: 20px;
+    color: #1b5e20;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tag-filter-btn:hover {
+    border-color: #81c784;
+    background: #f1f8e9;
+}
+
+.tag-filter-btn.active {
+    color: white;
+    border-color: #4caf50;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.filter-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #4caf50;
+}
+
+.tag-filter-btn.active .filter-dot {
+    background: white;
+}
+
+.filter-count {
+    color: #888;
+    font-size: 12px;
+}
+
+.tag-filter-btn.active .filter-count {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.filter-indicator {
+    font-size: 14px;
+    color: #888;
+    font-weight: normal;
+}
+
+.archive-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.archive-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    color: white;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid;
+}
+
+.more-tags {
+    display: inline-block;
+    padding: 2px 6px;
+    color: #888;
+    background: #f5f5f5;
+    border-radius: 8px;
+    font-size: 11px;
 }
 
 .modal-overlay {
