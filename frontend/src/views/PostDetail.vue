@@ -18,9 +18,31 @@
                 {{ post.content }}
             </div>
             <div class="post-actions">
-                <button class="btn btn-secondary" @click="toggleFavorite">
+                <button class="btn btn-secondary" @click="handleFavoriteClick">
                     {{ isFavorited ? '❤️ 已收藏' : '🤍 收藏' }}
                 </button>
+            </div>
+
+            <div v-if="showFolderSelect" class="modal-overlay" @click="showFolderSelect = false">
+                <div class="modal-content card" @click.stop>
+                    <h3>选择收藏夹</h3>
+                    <div class="folder-select-list">
+                        <div
+                            v-for="folder in folders"
+                            :key="folder.id"
+                            :class="['folder-option', { selected: selectedFolderId === folder.id }]"
+                            @click="selectedFolderId = folder.id"
+                        >
+                            <span class="folder-icon">📁</span>
+                            <span class="folder-name">{{ folder.name }}</span>
+                            <span v-if="selectedFolderId === folder.id" class="check-icon">✓</span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" @click="showFolderSelect = false">取消</button>
+                        <button class="btn btn-primary" @click="confirmFavorite">确定收藏</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -72,7 +94,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { postApi, commentApi, favoriteApi } from '../api'
+import { postApi, commentApi, favoriteApi, favoriteFolderApi } from '../api'
 import { useUserStore } from '../stores/user'
 
 const route = useRoute()
@@ -82,6 +104,9 @@ const comments = ref([])
 const newComment = ref('')
 const isFavorited = ref(false)
 const sortBy = ref('time')
+const showFolderSelect = ref(false)
+const folders = ref([])
+const selectedFolderId = ref(null)
 
 const formatDate = (date) => {
     if (!date) return ''
@@ -145,26 +170,57 @@ const changeSort = (sort) => {
     loadComments()
 }
 
-const toggleFavorite = async () => {
-    try {
-        if (isFavorited.value) {
+const handleFavoriteClick = async () => {
+    if (isFavorited.value) {
+        try {
             await favoriteApi.remove({
                 userId: userStore.currentUser.id,
                 targetType: 'post',
                 targetId: route.params.id
             })
-        } else {
-            await favoriteApi.add({
-                userId: userStore.currentUser.id,
-                targetType: 'post',
-                targetId: route.params.id,
-                title: post.value.title
-            })
+        } catch (e) {
+            console.error('取消收藏失败', e)
         }
-        isFavorited.value = !isFavorited.value
+        isFavorited.value = false
+    } else {
+        await loadFolders()
+        if (folders.value.length > 0) {
+            selectedFolderId.value = folders.value[0].id
+            showFolderSelect.value = true
+        }
+    }
+}
+
+const loadFolders = async () => {
+    try {
+        const res = await favoriteFolderApi.getByUser(userStore.currentUser.id)
+        folders.value = res.data
+        if (folders.value.length === 0) {
+            const defaultRes = await favoriteFolderApi.getOrCreateDefault(userStore.currentUser.id)
+            folders.value = [defaultRes.data]
+        }
     } catch (e) {
-        console.error('操作失败', e)
-        isFavorited.value = !isFavorited.value
+        console.error('加载收藏夹失败', e)
+        folders.value = [
+            { id: 1, name: '默认收藏夹', isDefault: true }
+        ]
+    }
+}
+
+const confirmFavorite = async () => {
+    try {
+        await favoriteApi.add({
+            userId: userStore.currentUser.id,
+            folderId: selectedFolderId.value,
+            targetType: 'post',
+            targetId: route.params.id,
+            title: post.value.title
+        })
+        isFavorited.value = true
+        showFolderSelect.value = false
+    } catch (e) {
+        console.error('收藏失败', e)
+        alert('收藏失败，请重试')
     }
 }
 
@@ -430,5 +486,74 @@ onMounted(async () => {
     text-align: center;
     color: #888;
     padding: 40px;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    width: 360px;
+    padding: 24px;
+}
+
+.modal-content h3 {
+    margin: 0 0 20px 0;
+    color: #1b5e20;
+}
+
+.folder-select-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.folder-option {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 6px;
+    transition: all 0.2s;
+    gap: 10px;
+}
+
+.folder-option:hover {
+    background: #f5f5f5;
+}
+
+.folder-option.selected {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+}
+
+.folder-icon {
+    font-size: 20px;
+}
+
+.folder-name {
+    flex: 1;
+    font-size: 14px;
+}
+
+.check-icon {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
 }
 </style>

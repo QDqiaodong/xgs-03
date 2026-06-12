@@ -117,16 +117,34 @@ CREATE TABLE IF NOT EXISTS comment (
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS favorite_folder (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL COMMENT '收藏夹名称',
+    description VARCHAR(500) COMMENT '收藏夹描述',
+    sort_order INT DEFAULT 0 COMMENT '排序序号',
+    is_default BOOLEAN DEFAULT FALSE COMMENT '是否为默认收藏夹',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_name (user_id, name),
+    INDEX idx_user_id (user_id),
+    INDEX idx_sort_order (sort_order),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS favorite (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
+    folder_id BIGINT COMMENT '收藏夹ID',
     target_type VARCHAR(50) NOT NULL COMMENT '收藏类型:post/solution',
     target_id BIGINT NOT NULL COMMENT '收藏目标ID',
     title VARCHAR(200) COMMENT '收藏标题',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_user_target (user_id, target_type, target_id),
+    UNIQUE KEY uk_user_target_folder (user_id, target_type, target_id, folder_id),
     INDEX idx_user_id (user_id),
-    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+    INDEX idx_folder_id (folder_id),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    FOREIGN KEY (folder_id) REFERENCES favorite_folder(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS comment_like (

@@ -4,16 +4,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "favorite", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"user_id", "target_type", "target_id", "folder_id"})
+@Table(name = "favorite_folder", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"user_id", "name"})
 })
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Favorite {
+public class FavoriteFolder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,19 +23,23 @@ public class Favorite {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "folder_id")
-    private Long folderId;
+    @Column(nullable = false, length = 100)
+    private String name;
 
-    @Column(name = "target_type", nullable = false, length = 50)
-    private String targetType;
+    @Column(length = 500)
+    private String description;
 
-    @Column(name = "target_id", nullable = false)
-    private Long targetId;
+    @Column(name = "sort_order")
+    private Integer sortOrder = 0;
 
-    @Column(length = 200)
-    private String title;
+    @Column(name = "is_default")
+    private Boolean isDefault = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

@@ -68,9 +68,26 @@ export const commentApi = {
 
 export const favoriteApi = {
     getByUser: (userId) => api.get(`/favorites/user/${userId}`),
+    getByFolder: (userId, folderId) => api.get(`/favorites/folder/${folderId}`, { params: { userId } }),
     check: (params) => api.get('/favorites/check', { params }),
+    checkFolder: (params) => api.get('/favorites/check-folder', { params }),
     add: (data) => api.post('/favorites', data),
-    remove: (params) => api.delete('/favorites', { params })
+    remove: (params) => api.delete('/favorites', { params }),
+    removeFromFolder: (userId, folderId, params) => api.delete(`/favorites/folder/${folderId}`, { params: { userId, ...params } }),
+    move: (userId, favoriteId, targetFolderId) => api.put(`/favorites/${favoriteId}/move`, { targetFolderId }, { params: { userId } }),
+    moveBatch: (userId, sourceFolderId, targetFolderId) => api.put('/favorites/move-batch', null, { params: { userId, sourceFolderId, targetFolderId } })
+}
+
+export const favoriteFolderApi = {
+    getByUser: (userId) => api.get(`/favorite-folders/user/${userId}`),
+    getById: (userId, folderId) => api.get(`/favorite-folders/${folderId}`, { params: { userId } }),
+    create: (data) => api.post('/favorite-folders', data),
+    update: (userId, folderId, data) => api.put(`/favorite-folders/${folderId}`, data, { params: { userId } }),
+    delete: (userId, folderId) => api.delete(`/favorite-folders/${folderId}`, { params: { userId } }),
+    updateOrder: (userId, folderIds) => api.put('/favorite-folders/order', folderIds, { params: { userId } }),
+    getFavorites: (userId, folderId) => api.get(`/favorite-folders/${folderId}/favorites`, { params: { userId } }),
+    getCount: (userId, folderId) => api.get(`/favorite-folders/${folderId}/count`, { params: { userId } }),
+    getOrCreateDefault: (userId) => api.post('/favorite-folders/default', { userId })
 }
 
 export const userApi = {
