@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 ARG DOCKER_REGISTRY=docker.m.daocloud.io/
 FROM ${DOCKER_REGISTRY}library/maven:3.9.6-eclipse-temurin-17 AS builder
 
@@ -6,9 +7,10 @@ WORKDIR /app
 COPY settings.xml /root/.m2/settings.xml
 
 COPY pom.xml .
+RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests dependency:resolve
 
 COPY src ./src
-RUN mvn -B clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 mvn -B package -DskipTests
 
 ARG DOCKER_REGISTRY=docker.m.daocloud.io/
 FROM ${DOCKER_REGISTRY}library/eclipse-temurin:17-jre
