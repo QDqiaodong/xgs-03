@@ -80,7 +80,9 @@
                 @click="goToDetail"
             />
 
-            <PostSkeleton v-for="i in skeletonCount" :key="'skeleton-' + i" />
+            <template v-if="isLoading">
+                <PostSkeleton v-for="i in skeletonCount" :key="'skeleton-' + i" />
+            </template>
 
             <div ref="sentinelRef" class="scroll-sentinel" aria-hidden="true"></div>
         </div>
