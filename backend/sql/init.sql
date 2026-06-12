@@ -34,9 +34,11 @@ CREATE TABLE IF NOT EXISTS user (
     avatar VARCHAR(500),
     email VARCHAR(100),
     phone VARCHAR(20),
+    points INT DEFAULT 0 COMMENT '积分',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_username (username)
+    INDEX idx_username (username),
+    INDEX idx_points (points)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS plant_archive (
@@ -255,5 +257,18 @@ CREATE TABLE IF NOT EXISTS achievement_badge (
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO user (username, nickname, avatar) VALUES
-('plant_lover', '绿植爱好者', 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cute%20gardener%20avatar&image_size=square');
+CREATE TABLE IF NOT EXISTS point_record (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    points INT NOT NULL COMMENT '积分变动值，正数为增加，负数为减少',
+    reason VARCHAR(100) NOT NULL COMMENT '变动原因',
+    related_type VARCHAR(50) COMMENT '关联类型',
+    related_id BIGINT COMMENT '关联ID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_created_at (created_at),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO user (username, nickname, avatar, points) VALUES
+('plant_lover', '绿植爱好者', 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cute%20gardener%20avatar&image_size=square', 100);

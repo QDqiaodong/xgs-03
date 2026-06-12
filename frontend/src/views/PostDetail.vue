@@ -72,6 +72,7 @@
                     <div class="comment-author">
                         <span class="avatar">{{ comment.user?.nickname?.charAt(0) || 'U' }}</span>
                         <span class="author-name">{{ comment.user?.nickname || '匿名用户' }}</span>
+                        <span v-if="comment.isBestAnswer" class="best-reward">+{{ bestAnswerReward }}积分</span>
                     </div>
                     <span class="comment-date">{{ formatDate(comment.createdAt) }}</span>
                 </div>
@@ -80,7 +81,20 @@
                     <button :class="['like-btn', { liked: comment.liked }]" @click="toggleCommentLike(comment)">
                         {{ comment.liked ? '❤️' : '👍' }} {{ comment.likeCount }}
                     </button>
-                    <button v-if="!comment.isBestAnswer" class="btn btn-text" @click="setBestAnswer(comment.id)">设为最佳答案</button>
+                    <button
+                        v-if="isPostAuthor && !comment.isBestAnswer && comment.userId !== post.userId"
+                        class="btn btn-text"
+                        @click="setBestAnswer(comment.id)"
+                    >
+                        设为最佳答案
+                    </button>
+                    <button
+                        v-if="isPostAuthor && comment.isBestAnswer"
+                        class="btn btn-text cancel-btn"
+                        @click="cancelBestAnswer(comment.id)"
+                    >
+                        取消最佳答案
+                    </button>
                 </div>
             </div>
 
@@ -92,7 +106,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { postApi, commentApi, favoriteApi, favoriteFolderApi } from '../api'
 import { useUserStore } from '../stores/user'
@@ -107,6 +121,11 @@ const sortBy = ref('time')
 const showFolderSelect = ref(false)
 const folders = ref([])
 const selectedFolderId = ref(null)
+const bestAnswerReward = 10
+
+const isPostAuthor = computed(() => {
+    return post.value && userStore.currentUser && post.value.userId === userStore.currentUser.id
+})
 
 const formatDate = (date) => {
     if (!date) return ''
@@ -153,15 +172,52 @@ const toggleCommentLike = async (comment) => {
 
 const setBestAnswer = async (id) => {
     try {
-        await commentApi.setBestAnswer(id, true)
-        comments.value.forEach(c => {
-            c.isBestAnswer = c.id === id
-        })
+        const res = await commentApi.setBestAnswer(id, userStore.currentUser.id)
+        if (res.data && res.data.comment) {
+            comments.value.forEach(c => {
+                c.isBestAnswer = c.id === id
+            })
+            if (post.value) {
+                post.value.isResolved = true
+            }
+            if (res.data.rewardPoints) {
+                alert(`✅ 已采纳为最佳答案，回答者获得 ${res.data.rewardPoints} 积分奖励！`)
+            }
+        }
     } catch (e) {
         console.error('设置最佳答案失败', e)
-        comments.value.forEach(c => {
-            c.isBestAnswer = c.id === id
-        })
+        if (e.response && e.response.data) {
+            alert(e.response.data)
+        } else {
+            alert('设置最佳答案失败，请重试')
+        }
+    }
+}
+
+const cancelBestAnswer = async (id) => {
+    if (!confirm('确定要取消最佳答案吗？取消后回答者的积分奖励将被扣除。')) {
+        return
+    }
+    try {
+        const res = await commentApi.cancelBestAnswer(id, userStore.currentUser.id)
+        if (res.data && res.data.comment) {
+            comments.value.forEach(c => {
+                if (c.id === id) {
+                    c.isBestAnswer = false
+                }
+            })
+            const hasBestAnswer = comments.value.some(c => c.isBestAnswer)
+            if (post.value && !hasBestAnswer) {
+                post.value.isResolved = false
+            }
+        }
+    } catch (e) {
+        console.error('取消最佳答案失败', e)
+        if (e.response && e.response.data) {
+            alert(e.response.data)
+        } else {
+            alert('取消最佳答案失败，请重试')
+        }
     }
 }
 
@@ -234,8 +290,8 @@ const loadComments = async () => {
     } catch (e) {
         console.error('加载评论失败', e)
         comments.value = [
-            { id: 1, content: '可能是浇水太多了，建议减少浇水频率，绿萝比较耐旱的。检查一下根部有没有腐烂，如果有的话需要剪掉重新发根。', user: { nickname: '养花达人' }, likeCount: 12, liked: false, isBestAnswer: true, createdAt: '2024-06-01T10:30:00' },
-            { id: 2, content: '我之前也遇到过这个问题，后来搬到通风更好的地方就好了。', user: { nickname: '绿植新手' }, likeCount: 3, liked: false, isBestAnswer: false, createdAt: '2024-06-01T11:20:00' }
+            { id: 1, userId: 2, content: '可能是浇水太多了，建议减少浇水频率，绿萝比较耐旱的。检查一下根部有没有腐烂，如果有的话需要剪掉重新发根。', user: { nickname: '养花达人' }, likeCount: 12, liked: false, isBestAnswer: true, createdAt: '2024-06-01T10:30:00' },
+            { id: 2, userId: 3, content: '我之前也遇到过这个问题，后来搬到通风更好的地方就好了。', user: { nickname: '绿植新手' }, likeCount: 3, liked: false, isBestAnswer: false, createdAt: '2024-06-01T11:20:00' }
         ]
     }
 }
@@ -261,6 +317,7 @@ onMounted(async () => {
         console.error('加载失败', e)
         post.value = {
             id: route.params.id,
+            userId: 1,
             title: '绿萝叶子发黄怎么办？',
             content: '最近发现我的绿萝叶子开始发黄，浇水频率是每周一次，放在客厅窗台，有散射光。不知道是什么原因，求大神指点！已经持续一周了，越来越严重，好担心它会死掉啊...',
             viewCount: 128,
@@ -436,6 +493,15 @@ onMounted(async () => {
     color: #1b5e20;
 }
 
+.best-reward {
+    font-size: 12px;
+    color: #ff9800;
+    background: #fff3e0;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
 .comment-date {
     font-size: 12px;
     color: #999;
@@ -480,6 +546,14 @@ onMounted(async () => {
     cursor: pointer;
     color: #4caf50;
     font-size: 13px;
+}
+
+.cancel-btn {
+    color: #999 !important;
+}
+
+.cancel-btn:hover {
+    color: #f44336 !important;
 }
 
 .empty-comments {

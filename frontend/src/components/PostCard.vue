@@ -8,6 +8,7 @@
             <div class="post-header">
                 <h3>{{ post.title }}</h3>
                 <span :class="['status', post.isResolved ? 'resolved' : 'pending']">
+                    <span v-if="post.isResolved" class="check-icon">✓</span>
                     {{ post.isResolved ? '已解决' : '待解决' }}
                 </span>
             </div>
@@ -125,8 +126,25 @@ onUnmounted(() => {
 }
 
 .status.resolved {
-    background: #e8f5e9;
-    color: #388e3c;
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.check-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: #4caf50;
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: bold;
 }
 
 .status.pending {

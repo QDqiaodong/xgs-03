@@ -4,6 +4,7 @@ import com.plantcare.dto.CommentDTO;
 import com.plantcare.entity.Comment;
 import com.plantcare.service.CommentLikeService;
 import com.plantcare.service.CommentService;
+import com.plantcare.service.PointService;
 import com.plantcare.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -64,9 +65,41 @@ public class CommentController {
     }
 
     @PutMapping("/{id}/best-answer")
-    public ResponseEntity<Comment> setBestAnswer(@PathVariable Long id, @RequestParam boolean isBest) {
-        Comment comment = commentService.setBestAnswer(id, isBest);
-        return comment != null ? ResponseEntity.ok(comment) : ResponseEntity.notFound().build();
+    public ResponseEntity<?> setBestAnswer(@PathVariable Long id, @RequestBody Map<String, Long> request) {
+        Long userId = request.get("userId");
+        if (userId == null) {
+            return ResponseEntity.badRequest().body("userId is required");
+        }
+        try {
+            Comment comment = commentService.setBestAnswer(id, userId);
+            if (comment == null) {
+                return ResponseEntity.notFound().build();
+            }
+            boolean liked = commentLikeService.isLiked(userId, id);
+            return ResponseEntity.ok(Map.of(
+                    "comment", CommentDTO.fromEntity(comment, liked),
+                    "rewardPoints", PointService.BEST_ANSWER_REWARD
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/best-answer")
+    public ResponseEntity<?> cancelBestAnswer(@PathVariable Long id, @RequestParam Long userId) {
+        try {
+            Comment comment = commentService.cancelBestAnswer(id, userId);
+            if (comment == null) {
+                return ResponseEntity.notFound().build();
+            }
+            boolean liked = commentLikeService.isLiked(userId, id);
+            return ResponseEntity.ok(Map.of(
+                    "comment", CommentDTO.fromEntity(comment, liked),
+                    "deductPoints", PointService.BEST_ANSWER_REWARD
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/{id}/like")

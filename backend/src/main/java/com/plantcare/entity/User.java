@@ -33,6 +33,9 @@ public class User {
     @Column(length = 20)
     private String phone;
 
+    @Column(name = "points")
+    private Integer points = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
