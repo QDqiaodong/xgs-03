@@ -64,4 +64,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByKeywordOrderByHotnessScoreDesc(
             @Param("keyword") String keyword,
             Pageable pageable);
+
+    @Query("SELECT COUNT(p) FROM Post p WHERE p.userId = :userId")
+    Long countByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT COALESCE(SUM(p.likeCount), 0) FROM Post p WHERE p.userId = :userId")
+    Long sumLikeCountByUserId(@Param("userId") Long userId);
 }

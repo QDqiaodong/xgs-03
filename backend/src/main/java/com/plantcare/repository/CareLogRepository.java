@@ -62,4 +62,7 @@ public interface CareLogRepository extends JpaRepository<CareLog, Long>, JpaSpec
             @Param("userId") Long userId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT COUNT(cl) FROM CareLog cl WHERE cl.userId = :userId")
+    Long countByUserId(@Param("userId") Long userId);
 }

@@ -1,5 +1,6 @@
 package com.plantcare.controller;
 
+import com.plantcare.dto.UserStatsDTO;
 import com.plantcare.entity.User;
 import com.plantcare.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,12 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
         return ResponseEntity.ok(userService.updateUser(id, user));
+    }
+
+    @GetMapping("/{id}/stats")
+    public ResponseEntity<UserStatsDTO> getUserStats(@PathVariable("id") Long userId) {
+        return userService.getUserById(userId)
+                .map(user -> ResponseEntity.ok(userService.getUserStats(userId)))
+                .orElse(ResponseEntity.notFound().build());
     }
 }
