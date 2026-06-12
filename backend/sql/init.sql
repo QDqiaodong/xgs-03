@@ -209,5 +209,33 @@ INSERT INTO plant_category (name, scientific_name, category, light_requirement, 
 ('芦荟', 'Aloe vera', '多肉植物', '充足阳光', '耐旱，干透浇透', '15-30℃', '40-60%', '生长季每月施一次稀薄肥', '摘除老叶', '根腐病、介壳虫', '芦荟不仅具有观赏价值，还有美容、药用等多种功效。', 1, 87),
 ('文竹', 'Asparagus setaceus', '观叶植物', '散射光，忌强光', '保持土壤湿润，忌积水', '15-25℃', '60-80%', '生长季每月施一次稀薄液肥', '修剪枯黄枝条', '叶枯病、介壳虫', '文竹姿态优美，气质文雅，是书房装饰的理想植物。', 2, 70);
 
+CREATE TABLE IF NOT EXISTS care_checkin (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    checkin_date DATE NOT NULL COMMENT '打卡日期',
+    care_log_ids TEXT COMMENT '关联的养护日志IDs,逗号分隔',
+    care_count INT NOT NULL DEFAULT 0 COMMENT '当日养护操作数',
+    remark VARCHAR(500) COMMENT '打卡备注',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_date (user_id, checkin_date),
+    INDEX idx_user_id (user_id),
+    INDEX idx_checkin_date (checkin_date),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS achievement_badge (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    badge_type VARCHAR(50) NOT NULL COMMENT '徽章类型:STREAK_7/STREAK_30/STREAK_100',
+    badge_name VARCHAR(100) NOT NULL COMMENT '徽章名称',
+    badge_icon VARCHAR(200) COMMENT '徽章图标',
+    streak_days INT NOT NULL COMMENT '所需连续天数',
+    description VARCHAR(500) COMMENT '徽章描述',
+    unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '解锁时间',
+    UNIQUE KEY uk_user_badge (user_id, badge_type),
+    INDEX idx_user_id (user_id),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO user (username, nickname, avatar) VALUES
 ('plant_lover', '绿植爱好者', 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cute%20gardener%20avatar&image_size=square');

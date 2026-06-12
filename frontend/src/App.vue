@@ -11,6 +11,7 @@
                     <li><router-link to="/archives">我的绿植</router-link></li>
                     <li><router-link to="/posts">交流社区</router-link></li>
                     <li><router-link to="/favorites">我的收藏</router-link></li>
+                    <li><router-link to="/checkin">养护打卡</router-link></li>
                 </ul>
             </div>
         </nav>

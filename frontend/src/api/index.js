@@ -116,4 +116,12 @@ export const plantPhotoApi = {
     setCover: (id) => api.put(`/plant-photos/${id}/set-cover`)
 }
 
+export const checkInApi = {
+    checkIn: (data) => api.post('/checkin', data),
+    getStatus: (userId) => api.get(`/checkin/status/${userId}`),
+    getCalendar: (userId, year, month) => api.get(`/checkin/calendar/${userId}`, { params: { year, month } }),
+    getHistory: (userId) => api.get(`/checkin/history/${userId}`),
+    getAchievements: (userId) => api.get(`/checkin/achievements/${userId}`)
+}
+
 export default api
