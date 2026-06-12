@@ -103,4 +103,17 @@ export const browseHistoryApi = {
     delete: (params) => api.delete('/browse-history', { params })
 }
 
+export const plantPhotoApi = {
+    getByArchive: (plantArchiveId) => api.get(`/plant-photos/archive/${plantArchiveId}`),
+    getById: (id) => api.get(`/plant-photos/${id}`),
+    getCover: (plantArchiveId) => api.get(`/plant-photos/archive/${plantArchiveId}/cover`),
+    upload: (formData, onProgress) => api.post('/plant-photos/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: onProgress
+    }),
+    update: (id, data) => api.put(`/plant-photos/${id}`, data),
+    delete: (id) => api.delete(`/plant-photos/${id}`),
+    setCover: (id) => api.put(`/plant-photos/${id}/set-cover`)
+}
+
 export default api

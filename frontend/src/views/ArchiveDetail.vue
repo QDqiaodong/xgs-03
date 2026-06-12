@@ -134,6 +134,12 @@
             </div>
         </div>
 
+        <PlantAlbum
+            ref="albumRef"
+            :plantArchiveId="route.params.id"
+            @cover-changed="handleCoverChanged"
+        />
+
         <GrowthTimeline
             ref="timelineRef"
             :plantId="route.params.id"
@@ -183,16 +189,18 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { plantArchiveApi, careLogApi } from '../api'
+import { plantArchiveApi, careLogApi, plantPhotoApi } from '../api'
 import { useUserStore } from '../stores/user'
 import LazyImage from '../components/LazyImage.vue'
 import GrowthTimeline from '../components/GrowthTimeline.vue'
+import PlantAlbum from '../components/PlantAlbum.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
 const archive = ref(null)
 const showAddLogModal = ref(false)
 const timelineRef = ref(null)
+const albumRef = ref(null)
 
 const showFilterPanel = ref(true)
 const filterOperationTypes = ref([])
@@ -371,10 +379,26 @@ const createLog = async () => {
     }
 }
 
+const handleCoverChanged = async (coverPhoto) => {
+    if (archive.value && coverPhoto) {
+        archive.value.imageUrl = coverPhoto.imageUrl
+    }
+}
+
 onMounted(async () => {
     try {
         const res = await plantArchiveApi.getById(route.params.id)
         archive.value = res.data
+        if (!archive.value.imageUrl) {
+            try {
+                const coverRes = await plantPhotoApi.getCover(route.params.id)
+                if (coverRes.data) {
+                    archive.value.imageUrl = coverRes.data.imageUrl
+                }
+            } catch (coverErr) {
+                console.log('No cover photo found', coverErr)
+            }
+        }
     } catch (e) {
         console.error('加载失败', e)
         archive.value = {

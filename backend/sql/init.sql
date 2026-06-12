@@ -163,6 +163,24 @@ CREATE TABLE IF NOT EXISTS care_reminder (
     FOREIGN KEY (care_log_id) REFERENCES care_log(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS plant_photo (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    plant_archive_id BIGINT NOT NULL COMMENT '植物档案ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    image_url VARCHAR(500) NOT NULL COMMENT '图片URL',
+    description TEXT COMMENT '照片描述',
+    photo_date DATE COMMENT '拍摄日期',
+    is_cover BOOLEAN DEFAULT FALSE COMMENT '是否为封面图',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_plant_archive_id (plant_archive_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_photo_date (photo_date),
+    INDEX idx_is_cover (is_cover),
+    FOREIGN KEY (plant_archive_id) REFERENCES plant_archive(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS browse_history (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL COMMENT '用户ID',

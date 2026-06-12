@@ -63,6 +63,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: ${REDIS_INTERNAL_PORT}
+    volumes:
+      - uploads-data:/app/uploads
     depends_on:
       mysql:
         condition: service_healthy
@@ -85,6 +87,7 @@ services:
 volumes:
   mysql-data:
   redis-data:
+  uploads-data:
 
 networks:
   plant-network:

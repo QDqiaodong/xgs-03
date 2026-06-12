@@ -17,6 +17,8 @@ WORKDIR /app
 
 COPY --from=builder /app/target/*.jar app.jar
 
+RUN mkdir -p /app/uploads/plant-photos
+
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar", "--server.port=8080"]
