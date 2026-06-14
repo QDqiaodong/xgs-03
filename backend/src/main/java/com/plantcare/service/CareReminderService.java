@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -36,9 +38,12 @@ public class CareReminderService {
     private static final String STATUS_DEFERRED = "DEFERRED";
     private static final String STATUS_CANCELLED = "CANCELLED";
 
+    private static final String CACHE_NAME = "careStatistics";
+
     private final CareReminderRepository careReminderRepository;
     private final PlantArchiveRepository plantArchiveRepository;
     private final CareLogRepository careLogRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
@@ -177,6 +182,7 @@ public class CareReminderService {
             }
 
             CareLog savedLog = careLogRepository.save(careLog);
+            evictUserStatisticsCache(reminder.getUserId());
 
             reminder.setStatus(STATUS_COMPLETED);
             reminder.setCompletedAt(LocalDateTime.now());
@@ -184,6 +190,14 @@ public class CareReminderService {
 
             return careReminderRepository.save(reminder);
         });
+    }
+
+    private void evictUserStatisticsCache(Long userId) {
+        String pattern = CACHE_NAME + "::" + userId + "_*";
+        Set<String> keys = redisTemplate.keys(pattern);
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
     }
 
     @Transactional

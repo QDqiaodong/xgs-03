@@ -105,8 +105,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { careLogApi } from '../api'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { careLogApi, EventBus } from '../api'
 import { useUserStore } from '../stores/user'
 
 const props = defineProps({
@@ -326,8 +326,19 @@ function generateMockLogs() {
     return mock
 }
 
+const handleCareLogUpdated = () => {
+    loadLogs()
+}
+
 onMounted(() => {
     loadLogs()
+    EventBus.on('careLog:updated', handleCareLogUpdated)
+    EventBus.on('careReminder:completed', handleCareLogUpdated)
+})
+
+onUnmounted(() => {
+    EventBus.off('careLog:updated', handleCareLogUpdated)
+    EventBus.off('careReminder:completed', handleCareLogUpdated)
 })
 
 defineExpose({ loadLogs })

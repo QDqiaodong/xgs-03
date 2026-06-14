@@ -23,7 +23,7 @@ public interface CareLogRepository extends JpaRepository<CareLog, Long>, JpaSpec
 
     CareLog findTopByPlantArchiveIdAndOperationTypeOrderByLogDateDescCreatedAtDesc(Long plantArchiveId, String operationType);
 
-    @Query("SELECT cl.logDate FROM CareLog cl WHERE cl.userId = :userId AND cl.logDate BETWEEN :startDate AND :endDate ORDER BY cl.logDate ASC")
+    @Query("SELECT DISTINCT cl.logDate FROM CareLog cl WHERE cl.userId = :userId AND cl.logDate BETWEEN :startDate AND :endDate ORDER BY cl.logDate ASC")
     List<LocalDate> findDistinctLogDatesByUserIdAndDateRange(
             @Param("userId") Long userId,
             @Param("startDate") LocalDate startDate,

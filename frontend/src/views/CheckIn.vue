@@ -76,8 +76,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { checkInApi, careLogApi } from '../api'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { checkInApi, careLogApi, EventBus } from '../api'
 import { useUserStore } from '../stores/user'
 import CheckInCalendar from '../components/CheckInCalendar.vue'
 import AchievementWall from '../components/AchievementWall.vue'
@@ -166,9 +166,24 @@ function closeBadgeModal() {
     showNewBadge.value = false
 }
 
+const handleCareDataUpdated = () => {
+    loadStatus()
+    loadTodayCareCount()
+    if (calendarRef.value) {
+        calendarRef.value.loadCalendar()
+    }
+}
+
 onMounted(() => {
     loadStatus()
     loadTodayCareCount()
+    EventBus.on('careLog:updated', handleCareDataUpdated)
+    EventBus.on('careReminder:completed', handleCareDataUpdated)
+})
+
+onUnmounted(() => {
+    EventBus.off('careLog:updated', handleCareDataUpdated)
+    EventBus.off('careReminder:completed', handleCareDataUpdated)
 })
 </script>
 

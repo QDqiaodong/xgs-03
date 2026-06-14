@@ -103,6 +103,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import LazyImage from './LazyImage.vue'
+import { EventBus } from '../api'
 
 const props = defineProps({
     plantId: {
@@ -135,6 +136,18 @@ const expandedItems = ref(new Set())
 
 const previewImages = ref([])
 const previewIndex = ref(0)
+
+const handleCareLogUpdated = (payload) => {
+    if (payload && payload.plantArchiveId && String(payload.plantArchiveId) === String(props.plantId)) {
+        resetAndLoad()
+    }
+}
+
+const handleReminderCompleted = (payload) => {
+    if (payload && payload.plantArchiveId && String(payload.plantArchiveId) === String(props.plantId)) {
+        resetAndLoad()
+    }
+}
 
 const operationConfig = {
     '浇水': { icon: '💧', label: '浇水', color: 'water' },
@@ -292,6 +305,8 @@ onMounted(async () => {
     await loadMoreLogs()
     await nextTick()
     setupObserver()
+    EventBus.on('careLog:updated', handleCareLogUpdated)
+    EventBus.on('careReminder:completed', handleReminderCompleted)
 })
 
 onUnmounted(() => {
@@ -299,6 +314,8 @@ onUnmounted(() => {
         observer.value.disconnect()
     }
     document.body.style.overflow = ''
+    EventBus.off('careLog:updated', handleCareLogUpdated)
+    EventBus.off('careReminder:completed', handleReminderCompleted)
 })
 
 defineExpose({ resetAndLoad })

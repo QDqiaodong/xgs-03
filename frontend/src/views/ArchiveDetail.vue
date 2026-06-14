@@ -193,7 +193,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { plantArchiveApi, careLogApi, plantPhotoApi } from '../api'
+import { plantArchiveApi, careLogApi, plantPhotoApi, EventBus } from '../api'
 import { useUserStore } from '../stores/user'
 import LazyImage from '../components/LazyImage.vue'
 import GrowthTimeline from '../components/GrowthTimeline.vue'
@@ -375,12 +375,10 @@ const createLog = async () => {
         if (timelineRef.value) {
             timelineRef.value.resetAndLoad()
         }
+        EventBus.emit('careLog:updated', { plantArchiveId: route.params.id })
     } catch (e) {
         console.error('创建失败', e)
-        showAddLogModal.value = false
-        if (timelineRef.value) {
-            timelineRef.value.resetAndLoad()
-        }
+        alert(e.response?.data?.message || '保存养护记录失败，请稍后重试')
     }
 }
 

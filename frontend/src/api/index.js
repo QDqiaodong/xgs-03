@@ -167,4 +167,37 @@ export const plantArchiveTagApi = {
     getCountByTags: (tagIds) => api.get('/plant-archive-tags/tags/count', { params: { tagIds }, paramsSerializer: { indexes: null } })
 }
 
+export const careReminderApi = {
+    getByUser: (userId) => api.get(`/care-reminders/user/${userId}`),
+    getByUserPaged: (userId, page = 0, size = 10) => api.get(`/care-reminders/user/${userId}/paged`, { params: { page, size } }),
+    getByUserAndStatus: (userId, status) => api.get(`/care-reminders/user/${userId}/status/${status}`),
+    getPendingByUser: (userId) => api.get(`/care-reminders/user/${userId}/pending`),
+    getByPlant: (plantArchiveId) => api.get(`/care-reminders/plant/${plantArchiveId}`),
+    getById: (id) => api.get(`/care-reminders/${id}`),
+    complete: (id, data) => api.post(`/care-reminders/${id}/complete`, data),
+    defer: (id, data) => api.post(`/care-reminders/${id}/defer`, data),
+    cancel: (id) => api.post(`/care-reminders/${id}/cancel`),
+    triggerScan: () => api.post('/care-reminders/trigger-scan')
+}
+
+const EventBus = {
+    events: {},
+    on(event, callback) {
+        if (!this.events[event]) {
+            this.events[event] = []
+        }
+        this.events[event].push(callback)
+    },
+    off(event, callback) {
+        if (!this.events[event]) return
+        this.events[event] = this.events[event].filter(cb => cb !== callback)
+    },
+    emit(event, payload) {
+        if (!this.events[event]) return
+        this.events[event].forEach(callback => callback(payload))
+    }
+}
+
+export { EventBus }
+
 export default api
