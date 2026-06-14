@@ -203,6 +203,14 @@ watch([() => plantList.value, filterMode], ([newList, newMode]) => {
     }
 }, { immediate: true })
 
+watch([filterMode, selectedPlantId], () => {
+    closeDayDetail()
+})
+
+watch([currentYear, currentMonth], () => {
+    closeDayDetail()
+})
+
 const filteredLogs = computed(() => {
     if (filterMode.value === 'single' && selectedPlantId.value) {
         return allLogs.value.filter(l => l.plantArchiveId === selectedPlantId.value)
