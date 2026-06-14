@@ -104,6 +104,7 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import LazyImage from './LazyImage.vue'
 import { EventBus } from '../api'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 
 const props = defineProps({
     plantId: {
@@ -222,11 +223,17 @@ const parseImageUrls = (imageUrls) => {
 
 const openImagePreview = (images, index) => {
     previewImages.value = images
-    previewIndex.value = index
+    previewIndex.value = Math.min(Math.max(0, index), Math.max(0, images.length - 1))
     document.body.style.overflow = 'hidden'
 }
 
 const closeImagePreview = () => {
+    previewImages.value = []
+    previewIndex.value = 0
+    document.body.style.overflow = ''
+}
+
+const resetPreviewState = () => {
     previewImages.value = []
     previewIndex.value = 0
     document.body.style.overflow = ''
@@ -289,6 +296,7 @@ const resetAndLoad = async () => {
 }
 
 watch(() => props.plantId, () => {
+    resetPreviewState()
     resetAndLoad()
 })
 
@@ -299,6 +307,10 @@ watch(() => props.filters, () => {
 watch(logs, async () => {
     await nextTick()
     setupObserver()
+})
+
+onBeforeRouteLeave(() => {
+    resetPreviewState()
 })
 
 onMounted(async () => {
@@ -313,7 +325,7 @@ onUnmounted(() => {
     if (observer.value) {
         observer.value.disconnect()
     }
-    document.body.style.overflow = ''
+    resetPreviewState()
     EventBus.off('careLog:updated', handleCareLogUpdated)
     EventBus.off('careReminder:completed', handleReminderCompleted)
 })

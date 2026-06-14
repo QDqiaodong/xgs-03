@@ -186,9 +186,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { plantPhotoApi } from '../api'
 import { useUserStore } from '../stores/user'
+import { onBeforeRouteLeave } from 'vue-router'
 
 const props = defineProps({
     plantArchiveId: {
@@ -392,11 +393,17 @@ const handleDelete = async (id) => {
 
 const openPreview = (group, index) => {
     previewImages.value = group
-    previewIndex.value = index
+    previewIndex.value = Math.min(Math.max(0, index), Math.max(0, group.length - 1))
     document.body.style.overflow = 'hidden'
 }
 
 const closePreview = () => {
+    previewImages.value = []
+    previewIndex.value = 0
+    document.body.style.overflow = ''
+}
+
+const resetPreviewState = () => {
     previewImages.value = []
     previewIndex.value = 0
     document.body.style.overflow = ''
@@ -411,11 +418,20 @@ const nextImage = () => {
 }
 
 watch(() => props.plantArchiveId, () => {
+    resetPreviewState()
     loadPhotos()
+})
+
+onBeforeRouteLeave(() => {
+    resetPreviewState()
 })
 
 onMounted(() => {
     loadPhotos()
+})
+
+onUnmounted(() => {
+    resetPreviewState()
 })
 
 defineExpose({ loadPhotos })

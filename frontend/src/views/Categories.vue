@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="categories-wrapper">
         <div class="page-header">
             <h1 class="page-title">🌿 植物百科</h1>
             <div v-if="compareCount > 0" class="header-hint">
@@ -182,6 +182,16 @@ onMounted(async () => {
     margin-bottom: 24px;
     flex-wrap: wrap;
     gap: 12px;
+}
+
+.categories-wrapper {
+    padding-bottom: 220px;
+}
+
+@media (max-width: 768px) {
+    .categories-wrapper {
+        padding-bottom: 260px;
+    }
 }
 
 .header-hint {
