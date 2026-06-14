@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/care-reminders", produces = "application/json;charset=UTF-8")
@@ -74,12 +75,16 @@ public class CareReminderController {
     }
 
     @PostMapping("/{id}/defer")
-    public ResponseEntity<CareReminder> deferReminder(
+    public ResponseEntity<?> deferReminder(
             @PathVariable Long id,
             @RequestBody(required = false) DeferReminderRequest request) {
-        return careReminderService.deferReminder(id, request)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            return careReminderService.deferReminder(id, request)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/{id}/cancel")

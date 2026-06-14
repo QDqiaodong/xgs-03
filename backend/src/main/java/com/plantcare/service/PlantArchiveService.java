@@ -36,6 +36,7 @@ public class PlantArchiveService {
 
     public PlantArchive createArchive(PlantArchive archive) {
         try {
+            sanitizeReminderFields(archive);
             return plantArchiveRepository.save(archive);
         } catch (Exception e) {
             log.error("createArchive failed", e);
@@ -46,10 +47,18 @@ public class PlantArchiveService {
     public PlantArchive updateArchive(Long id, PlantArchive archive) {
         try {
             archive.setId(id);
+            sanitizeReminderFields(archive);
             return plantArchiveRepository.save(archive);
         } catch (Exception e) {
             log.error("updateArchive failed for id={}", id, e);
             throw e;
+        }
+    }
+
+    private void sanitizeReminderFields(PlantArchive archive) {
+        if (archive.getReminderEnabled() == null || !archive.getReminderEnabled()) {
+            archive.setWaterInterval(null);
+            archive.setFertilizeInterval(null);
         }
     }
 

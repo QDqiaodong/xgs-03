@@ -85,9 +85,9 @@
                             +{{ getArchiveTags(archive.id).length - 3 }}
                         </span>
                     </div>
-                    <div v-if="archive.reminderEnabled" class="reminder-tags">
-                        <span class="mini-tag">💧 每{{ archive.waterInterval }}天浇水</span>
-                        <span class="mini-tag">🧪 每{{ archive.fertilizeInterval }}天施肥</span>
+                    <div v-if="archive.reminderEnabled && (archive.waterInterval || archive.fertilizeInterval)" class="reminder-tags">
+                        <span v-if="archive.waterInterval" class="mini-tag">💧 每{{ archive.waterInterval }}天浇水</span>
+                        <span v-if="archive.fertilizeInterval" class="mini-tag">🧪 每{{ archive.fertilizeInterval }}天施肥</span>
                     </div>
                 </div>
             </div>
@@ -227,6 +227,10 @@ const goToDetail = (id) => {
 const createArchive = async () => {
     try {
         const data = { ...newArchive.value, userId: userStore.currentUser.id }
+        if (!data.reminderEnabled) {
+            data.waterInterval = null
+            data.fertilizeInterval = null
+        }
         await plantArchiveApi.create(data)
         showAddModal.value = false
         loadArchives()

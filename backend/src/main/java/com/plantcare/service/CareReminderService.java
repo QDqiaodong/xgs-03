@@ -202,6 +202,11 @@ public class CareReminderService {
                 newDate = reminder.getReminderDate().plusDays(1);
             }
 
+            LocalDate today = LocalDate.now();
+            if (newDate.isBefore(today)) {
+                throw new IllegalArgumentException("延期提醒日期不能早于今天（" + today + "），当前选择的日期为：" + newDate);
+            }
+
             reminder.setReminderDate(newDate);
             reminder.setStatus(STATUS_DEFERRED);
             reminder.setDeferredCount(reminder.getDeferredCount() + 1);

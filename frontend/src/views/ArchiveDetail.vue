@@ -28,9 +28,9 @@
                         <span>{{ formatDate(archive.purchaseDate) }}</span>
                     </div>
                 </div>
-                <div v-if="archive.reminderEnabled" class="reminder-info">
-                    <span class="mini-tag">💧 每{{ archive.waterInterval }}天浇水</span>
-                    <span class="mini-tag">🧪 每{{ archive.fertilizeInterval }}天施肥</span>
+                <div v-if="archive.reminderEnabled && (archive.waterInterval || archive.fertilizeInterval)" class="reminder-info">
+                    <span v-if="archive.waterInterval" class="mini-tag">💧 每{{ archive.waterInterval }}天浇水</span>
+                    <span v-if="archive.fertilizeInterval" class="mini-tag">🧪 每{{ archive.fertilizeInterval }}天施肥</span>
                 </div>
                 <PlantTagSelector
                     :plant-archive-id="route.params.id"
